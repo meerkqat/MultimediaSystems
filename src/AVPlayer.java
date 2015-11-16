@@ -58,10 +58,10 @@ public class AVPlayer {
 	
 	private final JFileChooser fc = new JFileChooser();
 	
-	private final Icon iPlay = new ImageIcon("play.png");
-	private final Icon iPause = new ImageIcon("pause.png");
-	private final Icon iForward = new ImageIcon("fforward.png");
-	private final Icon iRewind = new ImageIcon("rewind.png");
+	private final Icon iPlay = new ImageIcon("imgs/play.png");
+	private final Icon iPause = new ImageIcon("imgs/pause.png");
+	private final Icon iForward = new ImageIcon("imgs/fforward.png");
+	private final Icon iRewind = new ImageIcon("imgs/rewind.png");
 	
 	private final TimeUnit unitScale = TimeUnit.SECONDS;
 	private final double playRate = 2.0;
@@ -95,7 +95,10 @@ public class AVPlayer {
         	}
         	else if(bttnName.equals("rewind")) {	
         		fforwardBttn.setSelected(false);
-        		playBttn.setSelected(false);
+        		if(playBttn.isSelected()) {
+        			playBttn.setSelected(false);
+        			playBttn.setIcon(iPlay);
+        		}
         		playbin.setState(State.PAUSED);
         		
         		if (rewindBttn.isSelected()) {
@@ -104,8 +107,11 @@ public class AVPlayer {
         		}
         	}
         	else if(bttnName.equals("fforward")) {
-        		playBttn.setSelected(false);
         		rewindBttn.setSelected(false);
+        		if(playBttn.isSelected()) {
+        			playBttn.setSelected(false);
+        			playBttn.setIcon(iPlay);
+        		}
         		playbin.setState(State.PAUSED);
         		
         		if (fforwardBttn.isSelected()) {
