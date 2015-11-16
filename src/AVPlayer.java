@@ -44,6 +44,7 @@ public class AVPlayer {
 	private JToggleButton playBttn;
 	private JToggleButton rewindBttn;
 	private JToggleButton fforwardBttn;
+	private JToggleButton muteBttn;
 	
 	private boolean userIsSeeking = false;
 	
@@ -55,6 +56,8 @@ public class AVPlayer {
 	private final Icon iPause = new ImageIcon("imgs/pause.png");
 	private final Icon iForward = new ImageIcon("imgs/fforward.png");
 	private final Icon iRewind = new ImageIcon("imgs/rewind.png");
+	private final Icon iMute = new ImageIcon("imgs/mute.png");
+	private final Icon iSpeaker = new ImageIcon("imgs/speaker.png");
 	
 	private final TimeUnit unitScale = TimeUnit.SECONDS;
 	private final double playRate = 2.0;
@@ -275,6 +278,16 @@ public class AVPlayer {
                 bttnsPanel.add(dummy,gbc);
                 
                 //Mute button
+                muteBttn = new JToggleButton(iSpeaker);
+                muteBttn.addActionListener(toggleBttnListener);
+                muteBttn.setPreferredSize(bttnDim);
+                muteBttn.setSize(bttnDim);
+
+                muteBttn.setName("mute");
+                gbc.gridx=4;
+                gbc.gridy=1;
+                
+                bttnsPanel.add(muteBttn, gbc);
                 
                 //Volume Slider
                 volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100,50);
