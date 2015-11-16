@@ -1,6 +1,8 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
@@ -38,6 +40,7 @@ public class AVPlayer {
 	private JFrame frame;
 	private JPanel bttnsPanel;
 	private JSlider seekBar;
+	private JSlider volumeSlider;
 	private JToggleButton playBttn;
 	private JToggleButton rewindBttn;
 	private JToggleButton fforwardBttn;
@@ -203,7 +206,8 @@ public class AVPlayer {
                 kfm.addKeyEventDispatcher(keyboardListener);
                 
                 // bottom panel
-                bttnsPanel = new JPanel(new FlowLayout());
+                bttnsPanel = new JPanel(new GridBagLayout());
+                GridBagConstraints gbc = new GridBagConstraints() ;
                 
                 frame.add(videoComponent, BorderLayout.CENTER);
                 frame.add(bttnsPanel, BorderLayout.SOUTH);
@@ -214,25 +218,37 @@ public class AVPlayer {
                 playBttn = new JToggleButton(iPlay);
                 playBttn.addActionListener(toggleBttnListener);
                 playBttn.setPreferredSize(bttnDim);
+                playBttn.setSize(bttnDim);
+
                 playBttn.setName("play");
+                gbc.gridx=0;
+                gbc.gridy=1;
                 
-                bttnsPanel.add(playBttn);
+                bttnsPanel.add(playBttn, gbc);
                 
                 // rewind bttn
                 rewindBttn = new JToggleButton(iRewind);
                 rewindBttn.addActionListener(toggleBttnListener);
                 rewindBttn.setPreferredSize(bttnDim);
+                rewindBttn.setSize(bttnDim);
+
                 rewindBttn.setName("rewind");
-                
-                bttnsPanel.add(rewindBttn);
+                gbc.gridx=1;
+                gbc.gridy=1;
+               
+                bttnsPanel.add(rewindBttn, gbc);
                 
                 // fast forward bttn
                 fforwardBttn = new JToggleButton(iForward);
                 fforwardBttn.addActionListener(toggleBttnListener);
                 fforwardBttn.setPreferredSize(bttnDim);
+                fforwardBttn.setSize(bttnDim);
+
                 fforwardBttn.setName("fforward");
+                gbc.gridx=2;
+                gbc.gridy=1;
                 
-                bttnsPanel.add(fforwardBttn);
+                bttnsPanel.add(fforwardBttn, gbc);
                 
                 // seek bar
                 seekBar = new JSlider(JSlider.HORIZONTAL, 0, 1, 0);
@@ -240,9 +256,36 @@ public class AVPlayer {
                 seekBar.setPaintTicks(false);
                 seekBar.setPaintLabels(true);
                 seekBar.setPreferredSize(new Dimension(480, 40));
+                seekBar.setSize(new Dimension(480, 40));
+
                 seekBar.addMouseListener(seekListener);
+                gbc.gridx=0;
+                gbc.gridy=0;
+                gbc.gridwidth=6;
                 
-                bttnsPanel.add(seekBar);
+                bttnsPanel.add(seekBar, gbc);
+                gbc.gridwidth=1;
+                
+                //White space
+                JPanel dummy = new JPanel();
+                
+                dummy.setPreferredSize(new Dimension(100,30));
+                gbc.gridx=3;
+                gbc.gridy=1;
+                bttnsPanel.add(dummy,gbc);
+                
+                //Mute button
+                
+                //Volume Slider
+                volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100,50);
+                volumeSlider.setPaintTicks(false);
+                volumeSlider.setPaintLabels(false);
+                volumeSlider.setPreferredSize(new Dimension(90, 40));
+                volumeSlider.setSize(new Dimension(90, 40));
+                gbc.gridx=5;
+                gbc.gridy=1;
+                
+                bttnsPanel.add(volumeSlider, gbc);
                 
                 seekThread.start();
                 
