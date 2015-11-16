@@ -284,8 +284,8 @@ public class AVPlayer {
 			seekBar.setValue((int)position);
 			
 
-			seekLabels.remove(1);
-			seekLabels.put(0,new JLabel("0:00"));
+			seekLabels = new Hashtable<Integer,JLabel>();
+			seekLabels.put(0,new JLabel("00:00"));
 			seekLabels.put((int)duration, new JLabel(labelFromTime(duration)));
 			
 		}
