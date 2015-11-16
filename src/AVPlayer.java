@@ -80,18 +80,13 @@ public class AVPlayer {
         	String bttnName = ((JToggleButton)e.getSource()).getName();
         	boolean bttnSelected = ((JToggleButton)e.getSource()).isSelected();
         	if(bttnName.equals("play")) {
-        		if(fforwardBttn.isSelected()) { 
-        			playBttn.setSelected(false);
-        			fforwardBttn.doClick();
-        		}
-        		if(rewindBttn.isSelected()) {
-        			playBttn.setSelected(false);
-        			rewindBttn.doClick();
-        		}
+        		fforwardBttn.setSelected(false);
+        		rewindBttn.setSelected(false);
         		playBttn.setSelected(bttnSelected);
         		
         		if (playBttn.isSelected()){
                 	playBttn.setIcon(iPause);
+                	playbin.seek(1.0, Format.TIME, SeekFlags.FLUSH | SeekFlags.ACCURATE, SeekType.SET, playbin.queryPosition(Format.TIME), SeekType.SET, -1);
                 	playbin.setState(State.PLAYING);
                 } else {
                 	playBttn.setIcon(iPlay);
@@ -99,45 +94,23 @@ public class AVPlayer {
                 }
         	}
         	else if(bttnName.equals("rewind")) {	
-        		if(fforwardBttn.isSelected()) {
-        			rewindBttn.setSelected(false);
-        			fforwardBttn.doClick();
-        		}
-        		if(playBttn.isSelected()) {
-        			rewindBttn.setSelected(false);
-        			playBttn.doClick();
-        		}
-        		rewindBttn.setSelected(bttnSelected);
+        		fforwardBttn.setSelected(false);
+        		playBttn.setSelected(false);
         		playbin.setState(State.PAUSED);
         		
         		if (rewindBttn.isSelected()) {
         			playbin.seek(-playRate, Format.TIME, SeekFlags.FLUSH | SeekFlags.ACCURATE, SeekType.SET, playbin.queryPosition(Format.TIME), SeekType.SET, playbin.queryPosition(Format.TIME));
         			playbin.setState(State.PLAYING);
         		}
-        		else {
-        			long t = playbin.queryPosition(unitScale); 
-        			playbin.seek(t, unitScale); // reset play rate
-        		}
         	}
         	else if(bttnName.equals("fforward")) {
-        		if(playBttn.isSelected()) {
-        			fforwardBttn.setSelected(false);
-        			playBttn.doClick();
-        		}
-        		if(rewindBttn.isSelected()) {
-        			fforwardBttn.setSelected(false);
-        			rewindBttn.doClick();
-        		}
-        		fforwardBttn.setSelected(bttnSelected);
+        		playBttn.setSelected(false);
+        		rewindBttn.setSelected(false);
         		playbin.setState(State.PAUSED);
         		
         		if (fforwardBttn.isSelected()) {
         			playbin.seek(playRate, Format.TIME, SeekFlags.FLUSH | SeekFlags.ACCURATE, SeekType.SET, playbin.queryPosition(Format.TIME), SeekType.SET, -1);
         			playbin.setState(State.PLAYING);
-        		}
-        		else {
-        			long t = playbin.queryPosition(unitScale); 
-        			playbin.seek(t, unitScale); // reset play rate
         		}
         	}
 		}
@@ -194,10 +167,11 @@ public class AVPlayer {
 			while(true) {
 				if(!userIsSeeking) {
 					long position = playbin.queryPosition(unitScale);
-					long duration = playbin.queryDuration(unitScale);
+					//long duration = playbin.queryDuration(unitScale);
 					
 					seekBar.setValue((int)position);
-					seekLabels.put((int)duration, new JLabel(labelFromTime(duration-position)));
+					//seekLabels.put((int)duration, new JLabel(labelFromTime(duration-position)));
+					seekLabels.put(0, new JLabel(labelFromTime(position)));
 					seekBar.setLabelTable(seekLabels);
 				}
 				// interesting "bug" with java - if sleeping is in the if statement, slider can get stuck (not update)
@@ -313,8 +287,8 @@ public class AVPlayer {
 			seekBar.setMaximum(1);
 			seekBar.setValue(0);
 			
-			seekLabels.put(0,new JLabel("0:00"));
-			seekLabels.put(1,new JLabel("0:00"));
+			seekLabels.put(0,new JLabel("00:00"));
+			seekLabels.put(1,new JLabel("00:00"));
 		}
 		
 		seekBar.setLabelTable(seekLabels);
