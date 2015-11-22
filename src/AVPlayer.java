@@ -5,6 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -181,9 +182,14 @@ public class AVPlayer {
 	 */
 	private MouseListener seekListener = new MouseListener() {
 
+		private long timePressed = 0;
+		
 		@Override
 		public void mouseReleased(MouseEvent e) {
+			// lets the user seek
 			playbin.seek(((JSlider) e.getComponent()).getValue(), unitScale);
+			rewindBttn.setSelected(false);
+			fforwardBttn.setSelected(false);
 			userIsSeeking = false;
 
 		}
@@ -191,6 +197,7 @@ public class AVPlayer {
 		@Override
 		public void mousePressed(MouseEvent e) {
 			userIsSeeking = true;
+			timePressed = System.currentTimeMillis();
 		}
 
 		@Override
@@ -203,11 +210,22 @@ public class AVPlayer {
 
 		@Override
 		public void mouseClicked(MouseEvent e) {
+			// user can click on the time bar and hop to that point
+			// timeDifference is needed, otherwise seeking will be overwritten
+			long timeNow = System.currentTimeMillis();
+			System.out.println(timeNow - timePressed);
+			long timeDifference = timeNow - timePressed;
+			if (seekBar.getWidth() != 0 && timeDifference < 150) {
+				Point mouse = e.getPoint();
+				double percent = (double)mouse.x/(double)seekBar.getWidth();
+				long duration =  playbin.queryDuration(unitScale);
+				playbin.seek((long)(duration*percent), unitScale);
+			}
 		}
 	};
 
 	/**
-	 * thread that updates the seekbar during seeking
+	 * thread that updates the seekbar during seeking in the seek bar
 	 */
 	private Thread seekThread = new Thread() {
 		public void run() {
