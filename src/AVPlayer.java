@@ -52,7 +52,7 @@ public class AVPlayer {
 	private Dictionary<Integer, JLabel> seekLabels = new Hashtable<Integer, JLabel>();
 
 	private final JFileChooser fc = new JFileChooser();
-
+	
 	/**
 	 * Icon for the play button
 	 */
@@ -145,6 +145,17 @@ public class AVPlayer {
 							playbin.queryPosition(Format.TIME), SeekType.SET,
 							-1);
 					playbin.setState(State.PLAYING);
+				}
+				// handles interaction with mute button
+			} else if (bttnName.equals("mute")){
+				if (muteBttn.isSelected()) {
+					muteBttn.setSelected(true);
+					muteBttn.setIcon(iMute);
+					playbin.setVolumePercent(0);
+				} else {
+					muteBttn.setSelected(false);
+					muteBttn.setIcon(iSpeaker);
+					playbin.setVolumePercent(volumeSlider.getValue());
 				}
 			}
 		}
@@ -360,7 +371,7 @@ public class AVPlayer {
 				bttnsPanel.add(muteBttn, gbc);
 
 				// Volume Slider
-				volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
+				volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 100);
 				volumeSlider.setPaintTicks(false);
 				volumeSlider.setPaintLabels(false);
 				volumeSlider.setPreferredSize(new Dimension(90, 40));
