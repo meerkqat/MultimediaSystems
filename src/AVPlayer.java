@@ -10,7 +10,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -54,6 +62,9 @@ public class AVPlayer {
 
 	private final JFileChooser fc = new JFileChooser();
 
+	private File log;
+
+	private String latestLoaded;
 	/**
 	 * Icon for the play button
 	 */
@@ -175,6 +186,7 @@ public class AVPlayer {
 					int returnVal = fc.showOpenDialog(frame);
 					if (returnVal == JFileChooser.APPROVE_OPTION) {
 						File file = fc.getSelectedFile();
+						latestLoaded = fc.getSelectedFile().getAbsolutePath();
 						loadVideo(file, playbin);
 					}
 					// F11 will switch to fullscreen
@@ -225,7 +237,6 @@ public class AVPlayer {
 			// user can click on the time bar and hop to that point
 			// timeDifference is needed, otherwise seeking will be overwritten
 			long timeNow = System.currentTimeMillis();
-			System.out.println(timeNow - timePressed);
 			long timeDifference = timeNow - timePressed;
 			if (seekBar.getWidth() != 0 && timeDifference < 150) {
 				Point mouse = e.getPoint();
@@ -278,6 +289,18 @@ public class AVPlayer {
 				frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 				frame.pack();
 				frame.setVisible(true);
+				// on exit, the last played file and the current volume will be saved
+				frame.addWindowListener(new WindowAdapter() {
+					public void windowClosing(WindowEvent we) {
+						try (Writer writer = new BufferedWriter(
+								new OutputStreamWriter(new FileOutputStream(
+										"log/log.txt"), "utf-8"))) {
+							String toWrite = latestLoaded + "\n" + volumeSlider.getValue();
+							writer.write(toWrite);
+						} catch (Exception e) {
+						}
+					}
+				});
 
 				// video component
 				VideoComponent videoComponent = new VideoComponent();
@@ -382,9 +405,28 @@ public class AVPlayer {
 
 				bttnsPanel.add(volumeSlider, gbc);
 
+				// the last played file and the current volume are loaded
+				log = new File("log/log.txt");
+				File f = null;
+				try {
+					log.createNewFile();
+					FileReader fr = new FileReader(log);
+					BufferedReader br = new BufferedReader(fr);
+					String title = br.readLine();
+					String volume = br.readLine();
+					if (title != null) {
+						f = new File(title);
+						latestLoaded = title;
+					}
+					if (volume != null) {
+						volumeSlider.setValue(Integer.parseInt(volume));
+					}
+
+				} catch (Exception e) {
+				}
 				seekThread.start();
 
-				loadVideo(null, playbin); // init playbin & seekbar
+				loadVideo(f, playbin); // init playbin & seekbar
 				setFileFilters();
 			}
 		});
