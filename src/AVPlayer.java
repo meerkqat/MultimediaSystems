@@ -7,6 +7,8 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -35,6 +37,8 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.gstreamer.ElementFactory;
 import org.gstreamer.Format;
@@ -55,11 +59,27 @@ public class AVPlayer {
 	private JToggleButton rewindBttn;
 	private JToggleButton fforwardBttn;
 	private JToggleButton muteBttn;
+	private JPanel spacerPanel;
+	private Dimension bttnDim = new Dimension(30, 30);
+	private Dimension volumeSliderDim = new Dimension(90, 40);
+	/**
+	 * saved frame size (before entering fullscreen)
+	 */
+	private Dimension prevFrameDim;
 
+	/**
+	 * set to true if user has pressed LMB on the seekbar and set to false when LMB is released
+	 */
 	private boolean userIsSeeking = false;
 
+	/**
+	 * seekbar labels
+	 */
 	private Dictionary<Integer, JLabel> seekLabels = new Hashtable<Integer, JLabel>();
 
+	/**
+	 * file chooser dialog
+	 */
 	private final JFileChooser fc = new JFileChooser();
 
 	private File log;
@@ -90,11 +110,20 @@ public class AVPlayer {
 	 */
 	private final Icon iSpeaker = new ImageIcon("imgs/speaker.png");
 
+	/**
+	 * time unit we use everywhere in the project
+	 */
 	private final TimeUnit unitScale = TimeUnit.SECONDS;
+	
+	/**
+	 * playback rate for fast-forwarding and rewinding
+	 */
 	private final double playRate = 2.0;
 
 	/**
-	 * toggle button events handler
+	 * Handler for all JToggleButton events, like play, rewind, mute. 
+	 * Pressing one of play, rewind, or fast-forward buttons should deselect the other two and set the playrate accordingly.
+	 * Mute disables the sound.  
 	 */
 	private ActionListener toggleBttnListener = new ActionListener() {
 
@@ -174,7 +203,9 @@ public class AVPlayer {
 	};
 
 	/**
-	 * keyboard shortcuts handler
+	 * Handler for keyboard shortcuts.
+	 * Ctrl+O opens a media file
+	 * F11 toggles fullscreen
 	 */
 	private KeyEventDispatcher keyboardListener = new KeyEventDispatcher() {
 		@Override
@@ -191,9 +222,19 @@ public class AVPlayer {
 					}
 					// F11 will switch to fullscreen
 				} else if (e.getKeyCode() == KeyEvent.VK_F11) {
+					if (frame.isUndecorated()) {
+						frame.setSize(prevFrameDim);
+						resizeListener.componentResized(null);
+					}
+					else {
+						prevFrameDim = frame.getSize();
+					}
 					frame.setExtendedState(frame.getExtendedState()
 							^ JFrame.MAXIMIZED_BOTH);
 					bttnsPanel.setVisible(!bttnsPanel.isVisible());
+					frame.dispose();
+					frame.setUndecorated(!frame.isUndecorated());
+					frame.setVisible(true);
 				}
 			}
 
@@ -202,7 +243,9 @@ public class AVPlayer {
 	};
 
 	/**
-	 * mouse events on seekbar handler
+	 * Handler for mouse events on the seekbar.
+	 * Briefly clicking anywhere on the seekbar sets the video to that position. 
+	 * Position can also be set by dragging the slider.
 	 */
 	private MouseListener seekListener = new MouseListener() {
 
@@ -212,8 +255,10 @@ public class AVPlayer {
 		public void mouseReleased(MouseEvent e) {
 			// lets the user seek
 			playbin.seek(((JSlider) e.getComponent()).getValue(), unitScale);
-			rewindBttn.setSelected(false);
-			fforwardBttn.setSelected(false);
+			// seeking while fast-forwarding or rewinding should set playback speed to normal 
+			if(rewindBttn.isSelected() || fforwardBttn.isSelected()) { 
+				playBttn.doClick();
+			}
 			userIsSeeking = false;
 
 		}
@@ -237,6 +282,7 @@ public class AVPlayer {
 			// user can click on the time bar and hop to that point
 			// timeDifference is needed, otherwise seeking will be overwritten
 			long timeNow = System.currentTimeMillis();
+			//System.out.println(timeNow - timePressed);
 			long timeDifference = timeNow - timePressed;
 			if (seekBar.getWidth() != 0 && timeDifference < 150) {
 				Point mouse = e.getPoint();
@@ -248,7 +294,7 @@ public class AVPlayer {
 	};
 
 	/**
-	 * thread that updates the seekbar during seeking in the seek bar
+	 * Thread that updates the seekbar during video playback.
 	 */
 	private Thread seekThread = new Thread() {
 		public void run() {
@@ -274,9 +320,41 @@ public class AVPlayer {
 			}
 		}
 	};
+	
+	/**
+	 * Handler for the volume slider.
+	 * Sets the volume of the media.
+	 */
+	private ChangeListener volumeListener = new ChangeListener() {
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			int volume = ((JSlider)e.getSource()).getValue();
+			playbin.setVolumePercent(volume);
+		}
+	};
+	
+	/**
+	 * Handler for scaling the seekbar and button spacing when the player is resized.
+	 * Resizes the seekbar to fill the window width, aligns volume controls to the right, playback buttons to the left.
+	 */
+	private ComponentAdapter resizeListener = new ComponentAdapter() {  
+	    public void componentResized(ComponentEvent evt) {
+		    int margin = 20;
+		    int frameWidth = frame.getWidth();
+		    seekBar.setPreferredSize(new Dimension(frameWidth-margin, 40));
+		    int spacerWidth = (int)(frameWidth - (4*bttnDim.getWidth()+volumeSliderDim.getWidth()));
+		    spacerPanel.setPreferredSize(new Dimension(spacerWidth-margin, 30));
+        }
+	};
 
+	/**
+	 * Main part of the code.
+	 * Creates the GUI, initializes everything, and loads a dummy file to start off with.
+	 * @param args 
+	 *            commandline parameters
+	 */
 	public AVPlayer(String[] args) {
-		// initialisation of gstreamer and starts the player
+		// initialisation of gstreamer and start the player
 		args = Gst.init("AVPlayer", args);
 		playbin = new PlayBin2("AVPlayer");
 
@@ -301,6 +379,8 @@ public class AVPlayer {
 						}
 					}
 				});
+				
+				frame.addComponentListener(resizeListener);
 
 				// video component
 				VideoComponent videoComponent = new VideoComponent();
@@ -320,13 +400,10 @@ public class AVPlayer {
 				frame.add(videoComponent, BorderLayout.CENTER);
 				frame.add(bttnsPanel, BorderLayout.SOUTH);
 
-				Dimension bttnDim = new Dimension(30, 30);
-
 				// play/pause bttn
 				playBttn = new JToggleButton(iPlay);
 				playBttn.addActionListener(toggleBttnListener);
 				playBttn.setPreferredSize(bttnDim);
-				playBttn.setSize(bttnDim);
 
 				playBttn.setName("play");
 				gbc.gridx = 0;
@@ -338,7 +415,6 @@ public class AVPlayer {
 				rewindBttn = new JToggleButton(iRewind);
 				rewindBttn.addActionListener(toggleBttnListener);
 				rewindBttn.setPreferredSize(bttnDim);
-				rewindBttn.setSize(bttnDim);
 
 				rewindBttn.setName("rewind");
 				gbc.gridx = 1;
@@ -350,7 +426,6 @@ public class AVPlayer {
 				fforwardBttn = new JToggleButton(iForward);
 				fforwardBttn.addActionListener(toggleBttnListener);
 				fforwardBttn.setPreferredSize(bttnDim);
-				fforwardBttn.setSize(bttnDim);
 
 				fforwardBttn.setName("fforward");
 				gbc.gridx = 2;
@@ -364,7 +439,6 @@ public class AVPlayer {
 				seekBar.setPaintTicks(false);
 				seekBar.setPaintLabels(true);
 				seekBar.setPreferredSize(new Dimension(480, 40));
-				seekBar.setSize(new Dimension(480, 40));
 
 				seekBar.addMouseListener(seekListener);
 				gbc.gridx = 0;
@@ -375,18 +449,17 @@ public class AVPlayer {
 				gbc.gridwidth = 1;
 
 				// White space
-				JPanel dummy = new JPanel();
+				spacerPanel = new JPanel();
 
-				dummy.setPreferredSize(new Dimension(300, 30));
+				spacerPanel.setPreferredSize(new Dimension(300, 30));
 				gbc.gridx = 3;
 				gbc.gridy = 1;
-				bttnsPanel.add(dummy, gbc);
+				bttnsPanel.add(spacerPanel, gbc);
 
 				// Mute button
 				muteBttn = new JToggleButton(iSpeaker);
 				muteBttn.addActionListener(toggleBttnListener);
 				muteBttn.setPreferredSize(bttnDim);
-				muteBttn.setSize(bttnDim);
 
 				muteBttn.setName("mute");
 				gbc.gridx = 4;
@@ -398,12 +471,14 @@ public class AVPlayer {
 				volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 100);
 				volumeSlider.setPaintTicks(false);
 				volumeSlider.setPaintLabels(false);
-				volumeSlider.setPreferredSize(new Dimension(90, 40));
-				volumeSlider.setSize(new Dimension(90, 40));
+				volumeSlider.setPreferredSize(volumeSliderDim);
+				volumeSlider.addChangeListener(volumeListener);
 				gbc.gridx = 5;
 				gbc.gridy = 1;
 
 				bttnsPanel.add(volumeSlider, gbc);
+				
+				resizeListener.componentResized(null);
 
 				// the last played file and the current volume are loaded
 				log = new File("log/log.txt");
@@ -442,7 +517,7 @@ public class AVPlayer {
 	 * @param f
 	 *            a media file
 	 * @param playbin
-	 *            from gstreamer
+	 *            a gstreamer pipeline
 	 */
 	private void loadVideo(File f, PlayBin2 playbin) {
 		playbin.setState(State.NULL);
