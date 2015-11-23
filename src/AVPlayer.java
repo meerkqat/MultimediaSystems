@@ -1,6 +1,5 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
@@ -53,6 +52,10 @@ public class AVPlayer {
 	private JPanel spacerPanel;
 	private Dimension bttnDim = new Dimension(30, 30);
 	private Dimension volumeSliderDim = new Dimension(90, 40);
+	/**
+	 * saved frame size (before entering fullscreen)
+	 */
+	private Dimension prevFrameDim;
 
 	/**
 	 * set to true if user has pressed LMB on the seekbar and set to false when LMB is released
@@ -106,7 +109,7 @@ public class AVPlayer {
 
 	/**
 	 * Handler for all JToggleButton events, like play, rewind, mute. 
-	 * Pressing one of play, rewind, or fast-forward buttons should delselect the other two and set the playrate accordingly.
+	 * Pressing one of play, rewind, or fast-forward buttons should deselect the other two and set the playrate accordingly.
 	 * Mute disables the sound.  
 	 */
 	private ActionListener toggleBttnListener = new ActionListener() {
@@ -205,9 +208,19 @@ public class AVPlayer {
 					}
 					// F11 will switch to fullscreen
 				} else if (e.getKeyCode() == KeyEvent.VK_F11) {
+					if (frame.isUndecorated()) {
+						frame.setSize(prevFrameDim);
+						resizeListener.componentResized(null);
+					}
+					else {
+						prevFrameDim = frame.getSize();
+					}
 					frame.setExtendedState(frame.getExtendedState()
 							^ JFrame.MAXIMIZED_BOTH);
 					bttnsPanel.setVisible(!bttnsPanel.isVisible());
+					frame.dispose();
+					frame.setUndecorated(!frame.isUndecorated());
+					frame.setVisible(true);
 				}
 			}
 
@@ -327,7 +340,7 @@ public class AVPlayer {
 	 *            commandline parameters
 	 */
 	public AVPlayer(String[] args) {
-		// initialisation of gstreamer and starts the player
+		// initialisation of gstreamer and start the player
 		args = Gst.init("AVPlayer", args);
 		playbin = new PlayBin2("AVPlayer");
 
