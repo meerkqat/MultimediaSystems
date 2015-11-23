@@ -1,6 +1,5 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
@@ -12,6 +11,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +26,7 @@ import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.gstreamer.ElementFactory;
 import org.gstreamer.Format;
@@ -52,7 +53,7 @@ public class AVPlayer {
 	private Dictionary<Integer, JLabel> seekLabels = new Hashtable<Integer, JLabel>();
 
 	private final JFileChooser fc = new JFileChooser();
-	
+
 	/**
 	 * Icon for the play button
 	 */
@@ -147,7 +148,7 @@ public class AVPlayer {
 					playbin.setState(State.PLAYING);
 				}
 				// handles interaction with mute button
-			} else if (bttnName.equals("mute")){
+			} else if (bttnName.equals("mute")) {
 				if (muteBttn.isSelected()) {
 					muteBttn.setSelected(true);
 					muteBttn.setIcon(iMute);
@@ -194,7 +195,7 @@ public class AVPlayer {
 	private MouseListener seekListener = new MouseListener() {
 
 		private long timePressed = 0;
-		
+
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			// lets the user seek
@@ -228,9 +229,9 @@ public class AVPlayer {
 			long timeDifference = timeNow - timePressed;
 			if (seekBar.getWidth() != 0 && timeDifference < 150) {
 				Point mouse = e.getPoint();
-				double percent = (double)mouse.x/(double)seekBar.getWidth();
-				long duration =  playbin.queryDuration(unitScale);
-				playbin.seek((long)(duration*percent), unitScale);
+				double percent = (double) mouse.x / (double) seekBar.getWidth();
+				long duration = playbin.queryDuration(unitScale);
+				playbin.seek((long) (duration * percent), unitScale);
 			}
 		}
 	};
@@ -384,6 +385,7 @@ public class AVPlayer {
 				seekThread.start();
 
 				loadVideo(null, playbin); // init playbin & seekbar
+				setFileFilters();
 			}
 		});
 
@@ -436,7 +438,9 @@ public class AVPlayer {
 
 	/**
 	 * Formats a given time for the labels of the seekBar
-	 * @param time which should be formated 
+	 * 
+	 * @param time
+	 *            which should be formated
 	 * @return String in the format MM:SS
 	 */
 	private String labelFromTime(long time) {
@@ -451,5 +455,23 @@ public class AVPlayer {
 
 	public static void main(String[] args) {
 		new AVPlayer(args);
+	}
+
+	/**
+	 * creates and ads file filters for the JFileChooser
+	 */
+	private void setFileFilters() {
+		ArrayList<FileNameExtensionFilter> filters = new ArrayList<FileNameExtensionFilter>();
+		fc.setAcceptAllFileFilterUsed(true);
+		filters.add(new FileNameExtensionFilter("avi", "avi"));
+		filters.add(new FileNameExtensionFilter("mp3", "mp3"));
+		filters.add(new FileNameExtensionFilter("mp4", "mp4"));
+		filters.add(new FileNameExtensionFilter("RealAudio", "ra", "rm"));
+		filters.add(new FileNameExtensionFilter("wav", "wav"));
+		filters.add(new FileNameExtensionFilter("webm", "webm"));
+		for (FileNameExtensionFilter f : filters) {
+			fc.addChoosableFileFilter(f);
+		}
+
 	}
 }
