@@ -26,6 +26,8 @@ import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import org.gstreamer.ElementFactory;
 import org.gstreamer.Format;
@@ -231,7 +233,7 @@ public class AVPlayer {
 			// user can click on the time bar and hop to that point
 			// timeDifference is needed, otherwise seeking will be overwritten
 			long timeNow = System.currentTimeMillis();
-			System.out.println(timeNow - timePressed);
+			//System.out.println(timeNow - timePressed);
 			long timeDifference = timeNow - timePressed;
 			if (seekBar.getWidth() != 0 && timeDifference < 150) {
 				Point mouse = e.getPoint();
@@ -267,6 +269,17 @@ public class AVPlayer {
 				} catch (InterruptedException e) {
 				}
 			}
+		}
+	};
+	
+	/**
+	 * volume slider handler
+	 */
+	private ChangeListener volumeListener = new ChangeListener() {
+		@Override
+		public void stateChanged(ChangeEvent e) {
+			int volume = ((JSlider)e.getSource()).getValue();
+			playbin.setVolumePercent(volume);
 		}
 	};
 
@@ -383,6 +396,7 @@ public class AVPlayer {
 				volumeSlider.setPaintLabels(false);
 				volumeSlider.setPreferredSize(new Dimension(90, 40));
 				volumeSlider.setSize(new Dimension(90, 40));
+				volumeSlider.addChangeListener(volumeListener);
 				gbc.gridx = 5;
 				gbc.gridy = 1;
 
