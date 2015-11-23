@@ -49,10 +49,19 @@ public class AVPlayer {
 	private JToggleButton fforwardBttn;
 	private JToggleButton muteBttn;
 
+	/**
+	 * set to true if user has pressed LMB on the seekbar and set to false when LMB is released
+	 */
 	private boolean userIsSeeking = false;
 
+	/**
+	 * seekbar labels
+	 */
 	private Dictionary<Integer, JLabel> seekLabels = new Hashtable<Integer, JLabel>();
 
+	/**
+	 * file chooser dialog
+	 */
 	private final JFileChooser fc = new JFileChooser();
 	
 	/**
@@ -86,12 +95,14 @@ public class AVPlayer {
 	private final TimeUnit unitScale = TimeUnit.SECONDS;
 	
 	/**
-	 * playback rate for fastforwarding and rewinding
+	 * playback rate for fast-forwarding and rewinding
 	 */
 	private final double playRate = 2.0;
 
 	/**
-	 * toggle button events handler
+	 * Handler for all JToggleButton events, like play, rewind, mute. 
+	 * Pressing one of play, rewind, or fast-forward buttons should delselect the other two and set the playrate accordingly.
+	 * Mute disables the sound.  
 	 */
 	private ActionListener toggleBttnListener = new ActionListener() {
 
@@ -171,7 +182,9 @@ public class AVPlayer {
 	};
 
 	/**
-	 * keyboard shortcuts handler
+	 * Handler for keyboard shortcuts.
+	 * Ctrl+O opens a media file
+	 * F11 toggles fullscreen
 	 */
 	private KeyEventDispatcher keyboardListener = new KeyEventDispatcher() {
 		@Override
@@ -198,7 +211,9 @@ public class AVPlayer {
 	};
 
 	/**
-	 * handler for mouse events on the seekbar
+	 * Handler for mouse events on the seekbar.
+	 * Briefly clicking anywhere on the seekbar sets the video to that position. 
+	 * Position can also be set by dragging the slider.
 	 */
 	private MouseListener seekListener = new MouseListener() {
 
@@ -247,7 +262,7 @@ public class AVPlayer {
 	};
 
 	/**
-	 * thread that updates the seekbar during video playback
+	 * Thread that updates the seekbar during video playback.
 	 */
 	private Thread seekThread = new Thread() {
 		public void run() {
@@ -275,7 +290,8 @@ public class AVPlayer {
 	};
 	
 	/**
-	 * volume slider handler
+	 * Handler for the volume slider.
+	 * Sets the volume of the media.
 	 */
 	private ChangeListener volumeListener = new ChangeListener() {
 		@Override
@@ -285,6 +301,12 @@ public class AVPlayer {
 		}
 	};
 
+	/**
+	 * Main part of the code.
+	 * Creates the GUI, initializes everything, and loads a dummy file to start off with.
+	 * @param args 
+	 *            commandline parameters
+	 */
 	public AVPlayer(String[] args) {
 		// initialisation of gstreamer and starts the player
 		args = Gst.init("AVPlayer", args);
