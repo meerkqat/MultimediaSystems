@@ -208,8 +208,10 @@ public class AVPlayer {
 		public void mouseReleased(MouseEvent e) {
 			// lets the user seek
 			playbin.seek(((JSlider) e.getComponent()).getValue(), unitScale);
-			rewindBttn.setSelected(false);
-			fforwardBttn.setSelected(false);
+			// seeking while fast-forwarding or rewinding should set playback speed to normal 
+			if(rewindBttn.isSelected() || fforwardBttn.isSelected()) { 
+				playBttn.doClick();
+			}
 			userIsSeeking = false;
 
 		}
