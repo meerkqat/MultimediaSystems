@@ -8,6 +8,8 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -48,6 +50,9 @@ public class AVPlayer {
 	private JToggleButton rewindBttn;
 	private JToggleButton fforwardBttn;
 	private JToggleButton muteBttn;
+	private JPanel spacerPanel;
+	private Dimension bttnDim = new Dimension(30, 30);
+	private Dimension volumeSliderDim = new Dimension(90, 40);
 
 	/**
 	 * set to true if user has pressed LMB on the seekbar and set to false when LMB is released
@@ -300,6 +305,20 @@ public class AVPlayer {
 			playbin.setVolumePercent(volume);
 		}
 	};
+	
+	/**
+	 * Handler for scaling the seekbar and button spacing when the player is resized.
+	 * Resizes the seekbar to fill the window width, aligns volume controls to the right, playback buttons to the left.
+	 */
+	private ComponentAdapter resizeListener = new ComponentAdapter() {  
+	    public void componentResized(ComponentEvent evt) {
+		    int margin = 20;
+		    int frameWidth = frame.getWidth();
+		    seekBar.setPreferredSize(new Dimension(frameWidth-margin, 40));
+		    int spacerWidth = (int)(frameWidth - (4*bttnDim.getWidth()+volumeSliderDim.getWidth()));
+		    spacerPanel.setPreferredSize(new Dimension(spacerWidth-margin, 30));
+        }
+	};
 
 	/**
 	 * Main part of the code.
@@ -321,6 +340,8 @@ public class AVPlayer {
 				frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 				frame.pack();
 				frame.setVisible(true);
+				
+				frame.addComponentListener(resizeListener);
 
 				// video component
 				VideoComponent videoComponent = new VideoComponent();
@@ -340,13 +361,10 @@ public class AVPlayer {
 				frame.add(videoComponent, BorderLayout.CENTER);
 				frame.add(bttnsPanel, BorderLayout.SOUTH);
 
-				Dimension bttnDim = new Dimension(30, 30);
-
 				// play/pause bttn
 				playBttn = new JToggleButton(iPlay);
 				playBttn.addActionListener(toggleBttnListener);
 				playBttn.setPreferredSize(bttnDim);
-				playBttn.setSize(bttnDim);
 
 				playBttn.setName("play");
 				gbc.gridx = 0;
@@ -358,7 +376,6 @@ public class AVPlayer {
 				rewindBttn = new JToggleButton(iRewind);
 				rewindBttn.addActionListener(toggleBttnListener);
 				rewindBttn.setPreferredSize(bttnDim);
-				rewindBttn.setSize(bttnDim);
 
 				rewindBttn.setName("rewind");
 				gbc.gridx = 1;
@@ -370,7 +387,6 @@ public class AVPlayer {
 				fforwardBttn = new JToggleButton(iForward);
 				fforwardBttn.addActionListener(toggleBttnListener);
 				fforwardBttn.setPreferredSize(bttnDim);
-				fforwardBttn.setSize(bttnDim);
 
 				fforwardBttn.setName("fforward");
 				gbc.gridx = 2;
@@ -384,7 +400,6 @@ public class AVPlayer {
 				seekBar.setPaintTicks(false);
 				seekBar.setPaintLabels(true);
 				seekBar.setPreferredSize(new Dimension(480, 40));
-				seekBar.setSize(new Dimension(480, 40));
 
 				seekBar.addMouseListener(seekListener);
 				gbc.gridx = 0;
@@ -395,18 +410,17 @@ public class AVPlayer {
 				gbc.gridwidth = 1;
 
 				// White space
-				JPanel dummy = new JPanel();
+				spacerPanel = new JPanel();
 
-				dummy.setPreferredSize(new Dimension(300, 30));
+				spacerPanel.setPreferredSize(new Dimension(300, 30));
 				gbc.gridx = 3;
 				gbc.gridy = 1;
-				bttnsPanel.add(dummy, gbc);
+				bttnsPanel.add(spacerPanel, gbc);
 
 				// Mute button
 				muteBttn = new JToggleButton(iSpeaker);
 				muteBttn.addActionListener(toggleBttnListener);
 				muteBttn.setPreferredSize(bttnDim);
-				muteBttn.setSize(bttnDim);
 
 				muteBttn.setName("mute");
 				gbc.gridx = 4;
@@ -418,13 +432,14 @@ public class AVPlayer {
 				volumeSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, 100);
 				volumeSlider.setPaintTicks(false);
 				volumeSlider.setPaintLabels(false);
-				volumeSlider.setPreferredSize(new Dimension(90, 40));
-				volumeSlider.setSize(new Dimension(90, 40));
+				volumeSlider.setPreferredSize(volumeSliderDim);
 				volumeSlider.addChangeListener(volumeListener);
 				gbc.gridx = 5;
 				gbc.gridy = 1;
 
 				bttnsPanel.add(volumeSlider, gbc);
+				
+				resizeListener.componentResized(null);
 
 				seekThread.start();
 
