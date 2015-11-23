@@ -78,7 +78,14 @@ public class AVPlayer {
 	 */
 	private final Icon iSpeaker = new ImageIcon("imgs/speaker.png");
 
+	/**
+	 * time unit we use everywhere in the project
+	 */
 	private final TimeUnit unitScale = TimeUnit.SECONDS;
+	
+	/**
+	 * playback rate for fastforwarding and rewinding
+	 */
 	private final double playRate = 2.0;
 
 	/**
@@ -189,7 +196,7 @@ public class AVPlayer {
 	};
 
 	/**
-	 * mouse events on seekbar handler
+	 * handler for mouse events on the seekbar
 	 */
 	private MouseListener seekListener = new MouseListener() {
 
@@ -236,7 +243,7 @@ public class AVPlayer {
 	};
 
 	/**
-	 * thread that updates the seekbar during seeking in the seek bar
+	 * thread that updates the seekbar during video playback
 	 */
 	private Thread seekThread = new Thread() {
 		public void run() {
@@ -398,7 +405,7 @@ public class AVPlayer {
 	 * @param f
 	 *            a media file
 	 * @param playbin
-	 *            from gstreamer
+	 *            a gstreamer pipeline
 	 */
 	private void loadVideo(File f, PlayBin2 playbin) {
 		playbin.setState(State.NULL);
