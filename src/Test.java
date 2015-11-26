@@ -24,17 +24,17 @@ public class Test {
         streamPipe = new PlayBin2("streamPipe");
         
         
-//        final Element videosrc = ElementFactory.make("v4l2src", "vidsrc"); 
-//        final Element videofilter = ElementFactory.make("capsfilter", "flt"); 
-//        videofilter.setCaps(Caps.fromString("video/x-raw-yuv, width=640, height=480")); 
-//        final Element tee = ElementFactory.make("tee", "tee0");
-//        tee.set("silent", "false");
-//        
-//        /*
-//        // video from file element
-//        final Element filesrc = ElementFactory.make("filesrc", "filesrc");
-//        filesrc.set("location", "/home/jurij/Downloads/test.mp4");
-//        */
+        final Element videosrc = ElementFactory.make("v4l2src", "vidsrc"); 
+        final Element videofilter = ElementFactory.make("capsfilter", "flt"); 
+        videofilter.setCaps(Caps.fromString("video/x-raw-yuv, width=640, height=480")); 
+        final Element tee = ElementFactory.make("tee", "tee0");
+        tee.set("silent", "false");
+        
+        /*
+        // video from file element
+        final Element filesrc = ElementFactory.make("filesrc", "filesrc");
+        filesrc.set("location", "/home/jurij/Downloads/test.mp4");
+        */
         
         // stream video over UDP
         // gst-launch v4l2src device=/dev/video0 ! 'video/x-raw-yuv,width=640,height=480' !  x264enc pass=qual quantizer=20 tune=zerolatency ! rtph264pay ! udpsink host=127.0.0.1 port=1234
@@ -50,16 +50,17 @@ public class Test {
         udpsink.set("host", "127.0.0.1");
 	    udpsink.set("port", "1234");
 
-	    // receive video stream over UDP
-        // gst-launch udpsrc port=1234 ! "application/x-rtp, payload=127" ! rtph264depay ! ffdec_h264 ! xvimagesink sync=false
-	    final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-	    udpsrc.set("port", "1234");
-	    final Element filter2 = ElementFactory.make("capsfilter", "filter2");
-	    filter.setCaps(Caps.fromString("application/x-rtp, payload=127")); 
-	    final Element rtph264depay = ElementFactory.make("rtph264depay", "payldr");
-	    final Element ffdec_h264 = ElementFactory.make("ffdec_h264", "decoder");
-	    //final Element xvsink = ElementFactory.make("xvimagesink", "xvsink");
-	    //xvsink.set("sync", "false");
+	    // you can't read and write from the same port simultaneously?
+//	    // receive video stream over UDP
+//      // gst-launch udpsrc port=1234 ! "application/x-rtp, payload=127" ! rtph264depay ! ffdec_h264 ! xvimagesink sync=false
+//	    final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+//	    udpsrc.set("port", "1234");
+//	    final Element filter2 = ElementFactory.make("capsfilter", "filter2");
+//	    filter.setCaps(Caps.fromString("application/x-rtp, payload=127")); 
+//	    final Element rtph264depay = ElementFactory.make("rtph264depay", "payldr");
+//	    final Element ffdec_h264 = ElementFactory.make("ffdec_h264", "decoder");
+//	    //final Element xvsink = ElementFactory.make("xvimagesink", "xvsink");
+//	    //xvsink.set("sync", "false");
 
         SwingUtilities.invokeLater(new Runnable() { 
             public void run() { 
@@ -80,11 +81,23 @@ public class Test {
 //                tee.link(videosink2);
                 
 
+                /**/
                 outPipe.addMany(v4l2src, filter, x264enc, rtph264pay, udpsink);
                 Element.linkMany(v4l2src, filter, x264enc, rtph264pay, udpsink);
+                /**/
                 
-                inPipe.addMany(udpsrc, filter2, rtph264depay, ffdec_h264, videosink);
-                Element.linkMany(udpsrc, filter2, rtph264depay, ffdec_h264, videosink);
+                /**
+                outPipe.addMany(v4l2src, filter, x264enc, rtph264pay, udpsink, tee, videosink);
+                v4l2src.link(filter);
+                filter.link(tee);
+                tee.link(videosink);
+                tee.link(x264enc);
+                x264enc.link(rtph264pay);
+                rtph264pay.link(udpsink);
+                /**/
+                
+//                inPipe.addMany(udpsrc, filter2, rtph264depay, ffdec_h264, videosink);
+//                Element.linkMany(udpsrc, filter2, rtph264depay, ffdec_h264, videosink);
 
                 //streamPipe.setInputFile(new File("/home/jurij/Downloads/test.mp4"));
                 try {
@@ -107,6 +120,7 @@ public class Test {
                 outPipe.setState(State.PLAYING);
                 inPipe.setState(State.PLAYING);
                 streamPipe.setState(State.PLAYING);
+                
             } 
         }); 
         
