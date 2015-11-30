@@ -331,7 +331,7 @@ public class AVPlayer {
 		@Override
 		public void stateChanged(ChangeEvent e) {
 			int volume = ((JSlider)e.getSource()).getValue();
-			playbin.setVolumePercent(volume);
+			if(!muteBttn.isSelected()) playbin.setVolumePercent(volume);
 		}
 	};
 	
