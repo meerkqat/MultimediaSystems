@@ -49,6 +49,8 @@ import org.gstreamer.State;
 import org.gstreamer.elements.PlayBin2;
 import org.gstreamer.swing.VideoComponent;
 
+import com.sun.jna.platform.unix.X11.Window;
+
 public class AVPlayer {
 	private PlayBin2 playbin;
 	private JFrame frame;
