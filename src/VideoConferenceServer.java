@@ -7,12 +7,15 @@ import java.net.Socket;
 import java.util.HashMap;
 
 // activity list:
+// client is streaming video to some address via udp
 // client clicks join
 // client opens socket to server
 // client sends its stream (multicast) address
 // client starts listening to server for stream addresses 
 // server sends the address to all previously connected clients and simultaneously removes dead connections
 // server sends all addresses of previously connected clients to new client
+
+// !! client should be able to handle dead multicast connections (probably) !!
 
 public class VideoConferenceServer {
 	private int port = 1234;
@@ -31,6 +34,7 @@ public class VideoConferenceServer {
 			System.exit(1);
 		}
 		
+		// accept new clients
 		while (1 <3 /*cookies*/) {
 			try {
 				Socket socket = ssocket.accept();
@@ -45,6 +49,7 @@ public class VideoConferenceServer {
 		}
 	}
 	
+	// handles a client socket (one per thread)
 	private class ConnectionHandler extends Thread {
 		
 		private Socket socket;
@@ -53,6 +58,7 @@ public class VideoConferenceServer {
 		boolean threadIsValid = true;
 		
 		public ConnectionHandler(Socket s) {
+			// open connection
 			socket = s;
 			try { 
 				out = new PrintWriter(s.getOutputStream(), true);
@@ -71,7 +77,7 @@ public class VideoConferenceServer {
 			
 			String address = "";
 			
-			// get stream address form socket
+			// get stream address from socket
 			try {
 				address = in.readLine();
 			}
@@ -96,6 +102,8 @@ public class VideoConferenceServer {
 					connections.remove(s);
 				}
 			}
+			
+			// add new socket to list
 			connections.put(socket, address);
 		}
 	}

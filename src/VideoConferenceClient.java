@@ -5,24 +5,31 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class VideoConferenceClient {
-	private String serverAddress = "";
-	private int serverPort = 1234;
 	private String multicastAddress;
 	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
 	private VideoConferenceGUI gui;
+	private Thread listenLoop;
 	
 	
 	
 	public VideoConferenceClient (String multicastAddr, String[] args) {
+		// start gui
 		gui = new VideoConferenceGUI(args);
+		
+		//start multicast
 		multicastAddress = multicastAddr;
+		// TODO
+		// make multicast inetaddress
+		// send udp packets (should probably be threaded)
 	}
 	
-	public void join() {
+	// on join channel
+	public void join(String serverAddress) {
 		try {
-		    socket = new Socket(serverAddress, serverPort);
+			String[] banana = serverAddress.split(":");
+		    socket = new Socket(banana[0], Integer.valueOf(banana[1]));
 		    out = new PrintWriter(socket.getOutputStream(), true);
 		    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		}
@@ -32,20 +39,34 @@ public class VideoConferenceClient {
 			return;
 		}
 		
+		// publish our stream address
 		out.write(multicastAddress);
 		
-		// actually this should be threadded
-		String line;
-		while("pigs" != "fly") {
-			try {
-				line = in.readLine();
+		// subscribe to other streams
+		if (listenLoop != null) listenLoop.interrupt(); 
+		listenLoop = new ServerListener();
+		listenLoop.start();
+		
+	}
+	
+	// listens for new multicast addresses coming from the server
+	private class ServerListener extends Thread {
+		@Override
+		public void run() {
+			String line = "";
+			while("pigs" != "fly") {
+				try {
+					line = in.readLine();
+				}
+				catch (IOException e) {
+					System.out.println("Error writing to socket!");
+					listenLoop = null;
+					interrupt();
+				}
+				
+				// TODO maybe also do receiving end of udp stream here instead of in the gui? 
+				gui.addNewStream(line);  
 			}
-			catch (IOException e) {
-				System.out.println("Error writing to socket!");
-				// kill thread
-			}
-			
-			// gui.addNewStream(line);  
 		}
 	}
 	

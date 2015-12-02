@@ -178,5 +178,10 @@ public class VideoConferenceGUI extends JFrame{
 		streamPipe.setState(State.NULL);
 		
     }
+    
+    public void addNewStream(String address) {
+    	if (address.length() == 0) return;
+    	
+    }
 }
 
