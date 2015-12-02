@@ -14,13 +14,13 @@ import java.util.HashMap;
 // server sends the address to all previously connected clients and simultaneously removes dead connections
 // server sends all addresses of previously connected clients to new client
 
-public class VideoServer {
+public class VideoConferenceServer {
 	private int port = 1234;
 	private ServerSocket ssocket;
 	private HashMap<Socket,String> connections;
 	
 	
-	public VideoServer() {
+	public VideoConferenceServer() {
 		connections = new HashMap<>();
 		try {
 			ssocket = new ServerSocket(port);
@@ -101,6 +101,6 @@ public class VideoServer {
 	}
 	
 	public static void main(String[] args) {
-		new VideoServer();
+		new VideoConferenceServer();
 	}
 }
