@@ -2,6 +2,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.net.URI;
 
 import javax.swing.BoxLayout;
@@ -31,10 +33,22 @@ public class VideoConference {
     private JButton joinButton;
     private JPanel videoPanel;
     
-    private final Dimension joinButtonDimension = new Dimension(100,50);
+    //private final Dimension joinButtonDimension = new Dimension(100,50);
     private final Dimension panelDimension = new Dimension(100,400);
-    private final Dimension videoPanelDimension = new Dimension(450,400);
+    //private final Dimension videoPanelDimension = new Dimension(450,400);
     
+	private ComponentAdapter resizeListener = new ComponentAdapter() {  
+	    public void componentResized(ComponentEvent evt) {
+	    	
+		    Dimension windowSize = frame.getSize();
+		    
+		    panel.setPreferredSize(new Dimension(100,windowSize.height-10));
+            videoPanel.setPreferredSize(new Dimension(windowSize.width-panelDimension.width-20,windowSize.height-10));
+            joinButton.setPreferredSize(new Dimension(panelDimension.width,100));
+
+            frame.repaint();
+        }
+	};
     
     public VideoConference(String[] args) {
         args = Gst.init("SwingVideoTest", args); 
@@ -121,28 +135,33 @@ public class VideoConference {
                 
                 frame = new JFrame("Swing Video Test"); 
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+                frame.setMinimumSize(new Dimension(500,300));
                 frame.setLayout(new FlowLayout());
+                frame.setPreferredSize(new Dimension(500,300));
+                frame.addComponentListener(resizeListener);
+                frame.pack(); 
+                frame.setVisible(true);
                 
                 videoComponent.setPreferredSize(new Dimension(640, 480));
                 videoComponent2.setPreferredSize(new Dimension(640, 480));
                 
                 panel = new JPanel();
-                panel.setPreferredSize(panelDimension);
-                
                 joinButton= new JButton("Join");
-                joinButton.setPreferredSize(joinButtonDimension);
-                
                 videoPanel = new JPanel();
-                videoPanel.setPreferredSize(videoPanelDimension);
+               
+                //videoPanel.setPreferredSize(videoPanelDimension);
+                videoPanel.setBackground(Color.black);
+                
+                resizeListener.componentResized(null);
+                videoPanel.repaint();
                 
                 panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
                 panel.add(joinButton);
                 
                 frame.add(videoPanel);
                 frame.add(panel);
+                frame.repaint();
                 
-                frame.pack(); 
-                frame.setVisible(true);
                 
                 
                 
