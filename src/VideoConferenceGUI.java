@@ -21,7 +21,7 @@ import org.gstreamer.State;
 import org.gstreamer.elements.PlayBin2;
 import org.gstreamer.swing.VideoComponent; 
 
-public class VideoConference { 
+public class VideoConferenceGUI extends JFrame{ 
     private Pipeline outPipe;
     private Pipeline inPipe;
     private PlayBin2 streamPipe;
@@ -50,7 +50,7 @@ public class VideoConference {
         }
 	};
     
-    public VideoConference(String[] args) {
+    public VideoConferenceGUI(String[] args) {
         args = Gst.init("SwingVideoTest", args); 
         outPipe = new Pipeline("outPipe"); 
         inPipe = new Pipeline("inPipe"); 
@@ -179,8 +179,9 @@ public class VideoConference {
 		
     }
     
-    public static void main(String[] args) { 
-    	new VideoConference(args);
+    public void addNewStream(String address) {
+    	if (address.length() == 0) return;
+    	
     }
 }
 
