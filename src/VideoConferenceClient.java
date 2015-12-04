@@ -16,7 +16,7 @@ public class VideoConferenceClient {
 	
 	public VideoConferenceClient (String multicastAddr, String[] args) {
 		// start gui
-		gui = new VideoConferenceGUI(args);
+		gui = new VideoConferenceGUI(this,args);
 		
 		//start multicast
 		multicastAddress = multicastAddr;
@@ -65,7 +65,7 @@ public class VideoConferenceClient {
 				}
 				
 				// TODO maybe also do receiving end of udp stream here instead of in the gui? 
-				gui.addNewStream(line);  
+				gui.addNewStream(line,null);  
 			}
 		}
 	}
