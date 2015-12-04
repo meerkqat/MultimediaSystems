@@ -2,7 +2,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 
 public class VideoConferenceClient {
 	private String multicastAddress;
@@ -18,11 +23,11 @@ public class VideoConferenceClient {
 		// start gui
 		gui = new VideoConferenceGUI(this,args);
 		
-		//start multicast
+		// start multicast
 		multicastAddress = multicastAddr;
-		// TODO
-		// make multicast inetaddress
-		// send udp packets (should probably be threaded)
+ 
+		Thread camStreamer = new Streamer(multicastAddr);
+		camStreamer.start();
 	}
 	
 	// on join channel
@@ -66,6 +71,55 @@ public class VideoConferenceClient {
 				
 				// TODO maybe also do receiving end of udp stream here instead of in the gui? 
 				gui.addNewStream(line,null);  
+			}
+		}
+	}
+	
+	private class Streamer extends Thread {
+		DatagramSocket socket;
+		InetAddress host;
+		int port;
+		
+		byte[] outBuf;
+		
+		public Streamer(String streamTo) {
+			String[] banana = streamTo.split(":");
+			try {
+				host = InetAddress.getByName(banana[0]);
+			}
+			catch (UnknownHostException e) {
+				System.out.println("Error getting multicast address!");
+				e.printStackTrace();
+			}
+			port = Integer.valueOf(banana[1]);
+			
+			try {
+				socket = new DatagramSocket();
+			}
+			catch (SocketException e) {
+				System.out.println("Error opening multicast socket!");
+				e.printStackTrace();
+			}
+			
+			outBuf = new byte[42];
+		}
+		
+		@Override
+		public void run() {
+			if (socket == null || host == null) interrupt();
+
+			try {
+				DatagramPacket outPacket;
+				while (true) {
+					outBuf = "TODO fill buffer and stuff".getBytes();
+
+					//Send to multicast IP:port
+					outPacket = new DatagramPacket(outBuf, outBuf.length, host, port);
+					socket.send(outPacket);
+				}
+			} catch (IOException e) {
+				System.out.println("Error sending to multicast address!");
+				e.printStackTrace();
 			}
 		}
 	}
