@@ -28,7 +28,7 @@ import org.gstreamer.swing.VideoComponent;
 
 public class VideoConferenceGUI extends JFrame{ 
     private JFrame frame;
-    private JPanel panel;
+    private JPanel sidebarPanel;
     private JButton joinButton;
     private JPanel videoPanel;
     
@@ -44,7 +44,7 @@ public class VideoConferenceGUI extends JFrame{
 	    	//save the window's dimensions
 		    Dimension windowSize = frame.getSize();
 		    //resize each component according to the window's dimensions
-		    panel.setPreferredSize(new Dimension(100,windowSize.height-10));
+		    sidebarPanel.setPreferredSize(new Dimension(100,windowSize.height-10));
             videoPanel.setPreferredSize(new Dimension(windowSize.width-panelDimension.width-20,windowSize.height-10));
             joinButton.setPreferredSize(new Dimension(panelDimension.width,100));
         }
@@ -78,7 +78,7 @@ public class VideoConferenceGUI extends JFrame{
                 frame.pack(); 
                 frame.setVisible(true);
                 
-                panel = new JPanel();
+                sidebarPanel = new JPanel();
                 joinButton= new JButton("Join");
                 joinButton.addActionListener(joinClick);
                 videoPanel = new JPanel(new GridBagLayout());
@@ -86,14 +86,14 @@ public class VideoConferenceGUI extends JFrame{
                 videoPanel.setBackground(Color.black);
                 resizeListener.componentResized(null);
                 
-                panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+                sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
                 
                 //add button to the panel
-                panel.add(joinButton);
+                sidebarPanel.add(joinButton);
                 
                 //add panel and videopanel to the frame
                 frame.add(videoPanel);
-                frame.add(panel);
+                frame.add(sidebarPanel);
                 
             } 
         }); 
@@ -104,7 +104,7 @@ public class VideoConferenceGUI extends JFrame{
     public void addNewStream(String address) {
     	if (address.length() == 0) return;
     	JLabel addressLabel =new JLabel(address);
-    	panel.add(addressLabel);
+    	sidebarPanel.add(addressLabel);
     	VideoComponent videoComponent = new VideoComponent();
     	Element videosink = videoComponent.getElement();
     	videosink.setName(address);
@@ -118,28 +118,28 @@ public class VideoConferenceGUI extends JFrame{
     			break;
     		}
     	}
-    	GridBagConstraints grid = new GridBagConstraints();
+    	GridBagConstraints gbc = new GridBagConstraints();
     	if(i==0){
-    		grid.gridx = 0;
-    		grid.gridy = 0;
+    		gbc.gridx = 0;
+    		gbc.gridy = 0;
     	}
     	else if(i==1){
-    		grid.gridx=1;
-    		grid.gridy=0;
+    		gbc.gridx=1;
+    		gbc.gridy=0;
     	}
     	else if(i==2){
-    		grid.gridx=0;
-    		grid.gridy=1;
+    		gbc.gridx=0;
+    		gbc.gridy=1;
     	}
     	else if(i==3){
-    		grid.gridx=1;
-    		grid.gridy=1;
+    		gbc.gridx=1;
+    		gbc.gridy=1;
     	}
     	else{
     		System.out.println("No more room");
     		return;
     	}
-    	videoPanel.add(videoComponent);
+    	videoPanel.add(videoComponent, gbc);
     	
     	Thread stream = new StreamListener(address);
     	stream.start();
@@ -157,7 +157,7 @@ public class VideoConferenceGUI extends JFrame{
     }
     
     public void stopConnection(String address){
-    	panel.remove(findByName(address,panel));
+    	sidebarPanel.remove(findByName(address,sidebarPanel));
     	videoPanel.remove(findByName(address,videoPanel));
     	for(int i=0;i<4;i++){
     		if(connections[i].equals(address)){
@@ -196,7 +196,7 @@ public class VideoConferenceGUI extends JFrame{
 				e.printStackTrace();
 			}
 			
-			inBuf = new byte[42];
+			inBuf = new byte[42]; // TODO
 		}
     	
     	@Override

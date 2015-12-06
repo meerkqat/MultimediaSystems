@@ -100,7 +100,7 @@ public class VideoConferenceClient {
 				e.printStackTrace();
 			}
 			
-			outBuf = new byte[42];
+			outBuf = new byte[42]; // TODO
 		}
 		
 		@Override
