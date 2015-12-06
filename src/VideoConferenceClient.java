@@ -69,8 +69,7 @@ public class VideoConferenceClient {
 					interrupt();
 				}
 				
-				// TODO maybe also do receiving end of udp stream here instead of in the gui? 
-				gui.addNewStream(line,null);  
+				gui.addNewStream(line);  
 			}
 		}
 	}
@@ -111,7 +110,7 @@ public class VideoConferenceClient {
 			try {
 				DatagramPacket outPacket;
 				while (true) {
-					outBuf = "TODO fill buffer and stuff".getBytes();
+					// TODO fill outBuf from pipeline
 
 					//Send to multicast IP:port
 					outPacket = new DatagramPacket(outBuf, outBuf.length, host, port);

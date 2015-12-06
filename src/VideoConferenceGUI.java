@@ -1,17 +1,17 @@
-import java.awt.BorderLayout; 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.net.URI;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -20,23 +20,13 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities; 
-import org.gstreamer.Caps; 
-import org.gstreamer.Element; 
-import org.gstreamer.ElementFactory; 
-import org.gstreamer.Gst; 
-import org.gstreamer.Pipeline; 
-import org.gstreamer.State;
-import org.gstreamer.elements.PlayBin2;
+import javax.swing.SwingUtilities;
+
+import org.gstreamer.Element;
+import org.gstreamer.Gst;
 import org.gstreamer.swing.VideoComponent; 
 
 public class VideoConferenceGUI extends JFrame{ 
-    private Pipeline outPipe;
-    private Pipeline inPipe;
-    private PlayBin2 streamPipe;
-    
-    private String address = "232.5.5.5";
-    private String port = "1234";
     private JFrame frame;
     private JPanel panel;
     private JButton joinButton;
@@ -67,94 +57,17 @@ public class VideoConferenceGUI extends JFrame{
 		public void actionPerformed(ActionEvent e) {
 			//create a dialog box
 			String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
-			client.join(address);
+			if (address != null && address.length() > 0) {
+				client.join(address);
+			}
 		}
 	};
     
     public VideoConferenceGUI(VideoConferenceClient client,String[] args) {
         args = Gst.init("SwingVideoTest", args); 
-        outPipe = new Pipeline("outPipe"); 
-        inPipe = new Pipeline("inPipe"); 
-        streamPipe = new PlayBin2("streamPipe");
-        this.client=client;
-        
-        // branch element
-        final Element tee = ElementFactory.make("tee", "tee0");
-        tee.set("silent", "false");
-
-        // video from file element
-//        final Element filesrc = ElementFactory.make("filesrc", "filesrc");
-//        filesrc.set("location", "/home/jurij/Downloads/test.mp4");
-        
-        // stream video over UDP
-        // gst-launch v4l2src device=/dev/video0 ! 'video/x-raw-yuv,width=640,height=480' !  x264enc pass=qual quantizer=20 tune=zerolatency ! rtph264pay ! udpsink host=127.0.0.1 port=1234
-        final Element v4l2src = ElementFactory.make("v4l2src","videosrc");
-        final Element filter = ElementFactory.make("capsfilter","filter");
-        filter.setCaps(Caps.fromString("video/x-raw-yuv, width=640, height=480")); 
-        final Element x264enc = ElementFactory.make("x264enc","encoder");
-        //x264enc.set("pass", "qual");
-        x264enc.set("quantizer", "20");
-        x264enc.set("tune", "4"); 
-        /*
-         tune:
-         static const GFlagsValue tune_types[] = {
-		  {0x0, "No tuning", "none"},
-		  {0x1, "Still image", "stillimage"},
-		  {0x2, "Fast decode", "fastdecode"},
-		  {0x4, "Zero latency", "zerolatency"},
-		  {0, NULL, NULL},
-		};
-         */
-        final Element rtph264pay = ElementFactory.make("rtph264pay","payloader");
-        final Element udpsink = ElementFactory.make("udpsink","sink");
-        udpsink.set("host", address);
-	    udpsink.set("port", port);
-
-	    // receive video stream over UDP
-	    // gst-launch udpsrc port=1234 ! "application/x-rtp, payload=127" ! rtph264depay ! ffdec_h264 ! xvimagesink sync=false
-	    final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-	    udpsrc.set("uri", "udp://"+address+":"+port);
-	    udpsrc.set("caps", Caps.fromString("application/x-rtp, payload=127"));
-	    final Element rtph264depay = ElementFactory.make("rtph264depay", "payldr");
-	    final Element ffdec_h264 = ElementFactory.make("ffdec_h264", "decoder");
 
         SwingUtilities.invokeLater(new Runnable() { 
             public void run() { 
-            	VideoComponent videoComponent = new VideoComponent(); 
-                Element videosink = videoComponent.getElement(); 
-                videosink.setName("center");
-
-                VideoComponent videoComponent2 = new VideoComponent();
-                Element videosink2 = videoComponent2.getElement();
-                videosink2.setName("south");
-                
-                /**/
-                outPipe.addMany(v4l2src, filter, x264enc, rtph264pay, udpsink);
-                Element.linkMany(v4l2src, filter, x264enc, rtph264pay, udpsink);
-                /**/
-                
-                /**
-                outPipe.addMany(v4l2src, filter, x264enc, rtph264pay, udpsink, tee, videosink);
-                v4l2src.link(filter);
-                filter.link(tee);
-                tee.link(videosink);
-                tee.link(x264enc);
-                x264enc.link(rtph264pay);
-                rtph264pay.link(udpsink);
-                /**/
-                
-                inPipe.addMany(udpsrc, rtph264depay, ffdec_h264, videosink);
-                Element.linkMany(udpsrc, rtph264depay, ffdec_h264, videosink);
-
-                //streamPipe.setInputFile(new File("/home/jurij/Downloads/test.mp4"));
-                try {
-                	streamPipe.setURI(new URI("http://1tv.ambra.ro"));
-                }
-                catch (Exception e) {
-                	e.printStackTrace();
-                }
-                streamPipe.setVideoSink(videosink2);
-                
                 //Create a new frame 
                 frame = new JFrame("Swing Video Test"); 
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
@@ -164,10 +77,6 @@ public class VideoConferenceGUI extends JFrame{
                 frame.addComponentListener(resizeListener);
                 frame.pack(); 
                 frame.setVisible(true);
-                
-                //Add each component
-                videoComponent.setPreferredSize(new Dimension(640, 480));
-                videoComponent2.setPreferredSize(new Dimension(640, 480));
                 
                 panel = new JPanel();
                 joinButton= new JButton("Join");
@@ -185,23 +94,14 @@ public class VideoConferenceGUI extends JFrame{
                 //add panel and videopanel to the frame
                 frame.add(videoPanel);
                 frame.add(panel);
- 
-                //Playing
-                outPipe.setState(State.PLAYING);
-                inPipe.setState(State.PLAYING);
-                streamPipe.setState(State.PLAYING);
                 
             } 
         }); 
         
         Gst.main();
-		outPipe.setState(State.NULL);
-        inPipe.setState(State.NULL);
-		streamPipe.setState(State.NULL);
-		
     }
     
-    public void addNewStream(String address,byte[] data) {
+    public void addNewStream(String address) {
     	if (address.length() == 0) return;
     	JLabel addressLabel =new JLabel(address);
     	panel.add(addressLabel);
@@ -241,16 +141,19 @@ public class VideoConferenceGUI extends JFrame{
     	}
     	videoPanel.add(videoComponent);
     	
-  	
+    	Thread stream = new StreamListener(address);
+    	stream.start();
     }
+    
     public JComponent findByName(String name, JComponent c){
     	if(c.getName().equals(name)){
     		return c;
     	}
+    	JComponent tmp = null;
     	for(int i =0;i<c.getComponentCount();i++){
-    		return findByName(name,(JComponent)c.getComponent(i));
+    		tmp = findByName(name,(JComponent)c.getComponent(i));
     	}
-    	return null;
+    	return tmp;
     }
     
     public void stopConnection(String address){
@@ -262,6 +165,54 @@ public class VideoConferenceGUI extends JFrame{
     			break;
     		}
     	}    	
+    }
+    
+    private class StreamListener extends Thread{
+    	InetAddress host;
+    	int port;
+    	MulticastSocket socket;
+    	DatagramPacket inPacket;
+    	byte[] inBuf;
+    	String addr;
+    	
+    	public StreamListener(String address) {
+    		addr = address;
+    		String[] banana = address.split(":");
+			try {
+				host = InetAddress.getByName(banana[0]);
+			}
+			catch (UnknownHostException e) {
+				System.out.println("Error getting multicast address!");
+				e.printStackTrace();
+			}
+			port = Integer.valueOf(banana[1]);
+			
+			try {
+				socket = new MulticastSocket(port);
+				socket.joinGroup(host);
+			}
+			catch (Exception e) { //IOE, UnknownHostE
+				System.out.println("Error opening socket!");
+				e.printStackTrace();
+			}
+			
+			inBuf = new byte[42];
+		}
+    	
+    	@Override
+    	public void run() {    		
+    	    try {
+    	      while (true) {
+    	        inPacket = new DatagramPacket(inBuf, inBuf.length);
+    	        socket.receive(inPacket);
+    	        
+    	        // TODO push from inBuf into pipeline
+    	      }
+    	    } catch (IOException ioe) {
+    	    	stopConnection(addr);
+    	    	interrupt();
+    	    }
+    	}
     }
 }
 
