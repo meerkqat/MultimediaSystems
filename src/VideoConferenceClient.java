@@ -126,10 +126,10 @@ public class VideoConferenceClient {
 					"video/x-raw-yuv, width=%s, height=%s"
 							+ ", bpp=24, depth=16,framerate=%s/1", "640",
 					"480", "30")));
-			final Element encoder = ElementFactory.make("theoraenc", "encoder");
+			final Element encoder = ElementFactory.make("ffenc_mpeg4", "encoder");
 			final Element formatConverter = ElementFactory.make(
 					"ffmpegcolorspace", "formatConverter");
-			final Element muxer = ElementFactory.make("oggmux", "muxer");
+			final Element muxer = ElementFactory.make("ffmux_mpeg", "muxer");
 			final Element ratefilter = ElementFactory.make("capsfilter",
 					"ratefilter");
 			ratefilter.setCaps(Caps.fromString(String.format(
