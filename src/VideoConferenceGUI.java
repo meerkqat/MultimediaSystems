@@ -220,7 +220,7 @@ public class VideoConferenceGUI extends JFrame{
 			
 			videosink = vsink;
 			
-			inBuf = new byte[42]; // TODO
+			inBuf = new byte[42];
 		}
     	
     	@Override
@@ -228,7 +228,7 @@ public class VideoConferenceGUI extends JFrame{
     		pipeline = new PlayBin2("Playbin");
     		pipeline.setVideoSink(videosink);
     		System.out.println("Starting stream listener...");
-    		File f = new File("home/dominik/Videos/Data.mp4");
+    		File f = new File("/home/dominik/Videos/Data.mp4");
     		FileOutputStream fos = null;
     		pipeline.setInputFile(f);
     		try {
@@ -245,7 +245,7 @@ public class VideoConferenceGUI extends JFrame{
 					public void run() {
 						pipeline.play();
 					}
-				}, 600);
+				}, 750);
     	      while (true) {
     	    	
     	        inPacket = new DatagramPacket(inBuf, inBuf.length);
