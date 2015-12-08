@@ -20,18 +20,20 @@ public class VideoConferenceClient {
 	
 	
 	public VideoConferenceClient (String multicastAddr, String[] args) {
-		// start gui
-		gui = new VideoConferenceGUI(this,args);
-		
 		// start multicast
 		multicastAddress = multicastAddr;
  
 		Thread camStreamer = new Streamer(multicastAddr);
 		camStreamer.start();
+		
+		// start gui
+		gui = new VideoConferenceGUI(this,args);		
 	}
 	
 	// on join channel
 	public void join(String serverAddress) {
+		System.out.println("Joining server on "+serverAddress);
+		
 		try {
 			String[] banana = serverAddress.split(":");
 		    socket = new Socket(banana[0], Integer.valueOf(banana[1]));
@@ -45,19 +47,21 @@ public class VideoConferenceClient {
 		}
 		
 		// publish our stream address
-		out.write(multicastAddress);
+		out.write(multicastAddress+"\n");
+		out.flush();
+		System.out.println("Sent multicast address");
 		
 		// subscribe to other streams
 		if (listenLoop != null) listenLoop.interrupt(); 
 		listenLoop = new ServerListener();
 		listenLoop.start();
-		
 	}
 	
 	// listens for new multicast addresses coming from the server
 	private class ServerListener extends Thread {
 		@Override
 		public void run() {
+			System.out.println("Starting to listen to server...");
 			String line = "";
 			while("pigs" != "fly") {
 				try {
@@ -82,6 +86,7 @@ public class VideoConferenceClient {
 		byte[] outBuf;
 		
 		public Streamer(String streamTo) {
+			System.out.println("Init cam streamer");
 			String[] banana = streamTo.split(":");
 			try {
 				host = InetAddress.getByName(banana[0]);
@@ -107,6 +112,8 @@ public class VideoConferenceClient {
 		public void run() {
 			if (socket == null || host == null) interrupt();
 
+			System.out.println("Streaming webcam...");
+			
 			try {
 				DatagramPacket outPacket;
 				while (true) {
@@ -124,6 +131,6 @@ public class VideoConferenceClient {
 	}
 	
 	public static void main(String[] args) {
-		new VideoConferenceClient("127.0.0.1:2345", args);
+		new VideoConferenceClient("232.2.2.2:2345", args);
 	}
 }

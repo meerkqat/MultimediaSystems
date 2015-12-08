@@ -57,14 +57,18 @@ public class VideoConferenceGUI extends JFrame{
 		public void actionPerformed(ActionEvent e) {
 			//create a dialog box
 			String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
+			System.out.println("Join dialog retured "+address);
 			if (address != null && address.length() > 0) {
 				client.join(address);
 			}
 		}
 	};
     
-    public VideoConferenceGUI(VideoConferenceClient client,String[] args) {
+    public VideoConferenceGUI(VideoConferenceClient c, String[] args) {
+    	client = c;
         args = Gst.init("SwingVideoTest", args); 
+        
+        System.out.println("Init GUI");
 
         SwingUtilities.invokeLater(new Runnable() { 
             public void run() { 
@@ -98,11 +102,14 @@ public class VideoConferenceGUI extends JFrame{
             } 
         }); 
         
-        Gst.main();
+        //Gst.main();
     }
     
     public void addNewStream(String address) {
     	if (address.length() == 0) return;
+    	
+    	System.out.println("Obtained new stream: "+address);
+    	
     	JLabel addressLabel =new JLabel(address);
     	sidebarPanel.add(addressLabel);
     	VideoComponent videoComponent = new VideoComponent();
@@ -157,6 +164,8 @@ public class VideoConferenceGUI extends JFrame{
     }
     
     public void stopConnection(String address){
+    	System.out.println("Stopping "+address);
+    	
     	sidebarPanel.remove(findByName(address,sidebarPanel));
     	videoPanel.remove(findByName(address,videoPanel));
     	for(int i=0;i<4;i++){
@@ -176,6 +185,8 @@ public class VideoConferenceGUI extends JFrame{
     	String addr;
     	
     	public StreamListener(String address) {
+    		System.out.println("Stream listener init");
+    		
     		addr = address;
     		String[] banana = address.split(":");
 			try {
@@ -200,7 +211,8 @@ public class VideoConferenceGUI extends JFrame{
 		}
     	
     	@Override
-    	public void run() {    		
+    	public void run() {
+    		System.out.println("Starting stream listener...");
     	    try {
     	      while (true) {
     	        inPacket = new DatagramPacket(inBuf, inBuf.length);

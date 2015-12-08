@@ -34,6 +34,8 @@ public class VideoConferenceServer {
 			System.exit(1);
 		}
 		
+		System.out.println("Server listening for clients...");
+		
 		// accept new clients
 		while (1 <3 /*cookies*/) {
 			try {
@@ -58,6 +60,8 @@ public class VideoConferenceServer {
 		boolean threadIsValid = true;
 		
 		public ConnectionHandler(Socket s) {
+			System.out.println("New connection");
+			
 			// open connection
 			socket = s;
 			try { 
@@ -74,6 +78,7 @@ public class VideoConferenceServer {
 		@Override
 		public synchronized void run() {
 			if (!threadIsValid) interrupt(); 
+			System.out.println("Handling connection...");
 			
 			String address = "";
 			
@@ -92,9 +97,11 @@ public class VideoConferenceServer {
 				try {
 					PrintWriter o = new PrintWriter(s.getOutputStream(), true);
 					o.write(address+"\n");
+					o.flush();
 					
 					// send all previous to new socket
 					out.write(connections.get(s)+"\n");
+					out.flush();
 				}
 				catch (IOException e) { 
 					// if any sockets died remove from list
@@ -105,6 +112,8 @@ public class VideoConferenceServer {
 			
 			// add new socket to list
 			connections.put(socket, address);
+			
+			System.out.println("Connection handled.");
 		}
 	}
 	
