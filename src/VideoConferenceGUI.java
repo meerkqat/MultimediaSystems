@@ -33,7 +33,7 @@ public class VideoConferenceGUI extends JFrame{
     private JPanel videoPanel;
     
     //Save the dimension of the panel with the button "join"
-    private final Dimension panelDimension = new Dimension(100,400);
+    private final Dimension panelDimension = new Dimension(180,400);
     
     private VideoConferenceClient client;
     private String[] connections = new String[4];
@@ -44,9 +44,10 @@ public class VideoConferenceGUI extends JFrame{
 	    	//save the window's dimensions
 		    Dimension windowSize = frame.getSize();
 		    //resize each component according to the window's dimensions
-		    sidebarPanel.setPreferredSize(new Dimension(100,windowSize.height-10));
+		    sidebarPanel.setPreferredSize(new Dimension(180,windowSize.height-10));
             videoPanel.setPreferredSize(new Dimension(windowSize.width-panelDimension.width-20,windowSize.height-10));
-            joinButton.setPreferredSize(new Dimension(panelDimension.width,100));
+            joinButton.setPreferredSize(new Dimension(panelDimension.width,30));
+            joinButton.setSize(new Dimension(panelDimension.width,30));
         }
 	};
 	
@@ -66,18 +67,18 @@ public class VideoConferenceGUI extends JFrame{
     
     public VideoConferenceGUI(VideoConferenceClient c, String[] args) {
     	client = c;
-        args = Gst.init("SwingVideoTest", args); 
+        args = Gst.init(client.multicastAddress, args); 
         
         System.out.println("Init GUI");
 
         SwingUtilities.invokeLater(new Runnable() { 
             public void run() { 
                 //Create a new frame 
-                frame = new JFrame("Swing Video Test"); 
+                frame = new JFrame(client.multicastAddress); 
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
                 frame.setMinimumSize(new Dimension(500,300)); 
                 frame.setLayout(new FlowLayout());
-                frame.setPreferredSize(new Dimension(500,300));                
+                frame.setPreferredSize(new Dimension(1000,600));                
                 frame.addComponentListener(resizeListener);
                 frame.pack(); 
                 frame.setVisible(true);
@@ -90,7 +91,7 @@ public class VideoConferenceGUI extends JFrame{
                 videoPanel.setBackground(Color.black);
                 resizeListener.componentResized(null);
                 
-                sidebarPanel.setLayout(new BoxLayout(sidebarPanel, BoxLayout.Y_AXIS));
+                sidebarPanel.setLayout(new FlowLayout());
                 
                 //add button to the panel
                 sidebarPanel.add(joinButton);
@@ -110,7 +111,7 @@ public class VideoConferenceGUI extends JFrame{
     	
     	System.out.println("Obtained new stream: "+address);
     	
-    	JLabel addressLabel =new JLabel(address);
+    	JLabel addressLabel = new JLabel(address);
     	sidebarPanel.add(addressLabel);
     	VideoComponent videoComponent = new VideoComponent();
     	Element videosink = videoComponent.getElement();
@@ -150,6 +151,10 @@ public class VideoConferenceGUI extends JFrame{
     	
     	Thread stream = new StreamListener(address);
     	stream.start();
+    	
+    	// apparently resizing make box layout behave properly
+    	frame.setSize(new Dimension(frame.getSize().width+1, frame.getSize().height));
+    	frame.setSize(new Dimension(frame.getSize().width-1, frame.getSize().height));
     }
     
     public JComponent findByName(String name, JComponent c){
@@ -202,7 +207,7 @@ public class VideoConferenceGUI extends JFrame{
 				socket = new MulticastSocket(port);
 				socket.joinGroup(host);
 			}
-			catch (Exception e) { //IOE, UnknownHostE
+			catch (IOException e) {
 				System.out.println("Error opening socket!");
 				e.printStackTrace();
 			}

@@ -10,7 +10,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class VideoConferenceClient {
-	private String multicastAddress;
+	public String multicastAddress = "232.2.3.2:2345";
 	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
@@ -19,11 +19,9 @@ public class VideoConferenceClient {
 	
 	
 	
-	public VideoConferenceClient (String multicastAddr, String[] args) {
-		// start multicast
-		multicastAddress = multicastAddr;
- 
-		Thread camStreamer = new Streamer(multicastAddr);
+	public VideoConferenceClient (String[] args) {
+		// start multicast 
+		Thread camStreamer = new Streamer(multicastAddress);
 		camStreamer.start();
 		
 		// start gui
@@ -131,6 +129,6 @@ public class VideoConferenceClient {
 	}
 	
 	public static void main(String[] args) {
-		new VideoConferenceClient("232.2.2.2:2345", args);
+		new VideoConferenceClient(args);
 	}
 }
