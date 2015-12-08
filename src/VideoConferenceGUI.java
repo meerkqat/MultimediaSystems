@@ -149,7 +149,7 @@ public class VideoConferenceGUI extends JFrame{
     	}
     	videoPanel.add(videoComponent, gbc);
     	
-    	Thread stream = new StreamListener(address);
+    	Thread stream = new StreamListener(address, videosink);
     	stream.start();
     	
     	// apparently resizing make box layout behave properly
@@ -188,8 +188,9 @@ public class VideoConferenceGUI extends JFrame{
     	DatagramPacket inPacket;
     	byte[] inBuf;
     	String addr;
+    	Element videosink;
     	
-    	public StreamListener(String address) {
+    	public StreamListener(String address, Element vsink) {
     		System.out.println("Stream listener init");
     		
     		addr = address;
@@ -212,6 +213,8 @@ public class VideoConferenceGUI extends JFrame{
 				e.printStackTrace();
 			}
 			
+			videosink = vsink;
+			
 			inBuf = new byte[42]; // TODO
 		}
     	
@@ -223,7 +226,7 @@ public class VideoConferenceGUI extends JFrame{
     	        inPacket = new DatagramPacket(inBuf, inBuf.length);
     	        socket.receive(inPacket);
     	        
-    	        // TODO push from inBuf into pipeline
+    	        // TODO push from inBuf into pipeline, ends with videosink
     	      }
     	    } catch (IOException ioe) {
     	    	stopConnection(addr);
