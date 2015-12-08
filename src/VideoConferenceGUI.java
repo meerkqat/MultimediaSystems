@@ -211,6 +211,7 @@ public class VideoConferenceGUI extends JFrame{
 			
 			try {
 				socket = new MulticastSocket(port);
+				socket.setInterface(InetAddress.getByName(client.localIP));
 				socket.joinGroup(host);
 			}
 			catch (IOException e) {
@@ -228,7 +229,10 @@ public class VideoConferenceGUI extends JFrame{
     		pipeline = new PlayBin2("Playbin");
     		pipeline.setVideoSink(videosink);
     		System.out.println("Starting stream listener...");
-    		File f = new File("/home/dominik/Videos/Data.mp4");
+
+//    		File f = new File("/home/dominik/Videos/Data.mp4");
+
+    		File f = new File("/home/jurij/Downloads/Data.mp4");
     		FileOutputStream fos = null;
     		pipeline.setInputFile(f);
     		try {
