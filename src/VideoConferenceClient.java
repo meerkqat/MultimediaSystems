@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -19,7 +20,8 @@ import org.gstreamer.Pipeline;
 import org.gstreamer.elements.AppSink;
 
 public class VideoConferenceClient {
-	public String multicastAddress = "232.2.3.2:2345";
+	public String multicastAddress = "232.2.3.5:7777";
+	public String localIP = "10.42.0.1";
 	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
@@ -87,7 +89,7 @@ public class VideoConferenceClient {
 	}
 
 	private class Streamer extends Thread {
-		DatagramSocket socket;
+		MulticastSocket socket;
 		InetAddress host;
 		int port;
 
@@ -105,8 +107,9 @@ public class VideoConferenceClient {
 			port = Integer.valueOf(banana[1]);
 
 			try {
-				socket = new DatagramSocket();
-			} catch (SocketException e) {
+				socket = new MulticastSocket(port);
+				socket.setInterface(InetAddress.getByName(localIP));
+			} catch (IOException e) {
 				System.out.println("Error opening multicast socket!");
 				e.printStackTrace();
 			}
