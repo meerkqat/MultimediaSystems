@@ -111,14 +111,12 @@ public class VideoConferenceClient {
 				e.printStackTrace();
 			}
 
-			outBuf = new byte[42]; // TODO
+			outBuf = new byte[42];
 		}
 
 		@Override
 		public void run() {
 			// init appsink
-			// Appsink
-
 			final Element v4l2src = ElementFactory.make("v4l2src", "v4l2src");
 			final Element filter = ElementFactory.make("capsfilter", "filter");
 			filter.setCaps(Caps.fromString(String.format(
@@ -140,6 +138,7 @@ public class VideoConferenceClient {
 
 				@Override
 				public void newBuffer(AppSink arg0) {
+					// fills the buffer from the pipeline
 					Buffer buffer = arg0.getLastBuffer();
 					ByteBuffer byteBuffer = buffer.getByteBuffer();
 					outBuf = new byte[byteBuffer.remaining()];
@@ -160,9 +159,6 @@ public class VideoConferenceClient {
 			try {
 				DatagramPacket outPacket;
 				while (true) {
-					// TODO fill outBuf from pipeline
-					System.out.println(outBuf);
-					System.out.println(outBuf.length);
 					// Send to multicast IP:port
 					outPacket = new DatagramPacket(outBuf, outBuf.length, host,
 							port);

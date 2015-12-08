@@ -7,13 +7,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -24,14 +28,15 @@ import javax.swing.SwingUtilities;
 
 import org.gstreamer.Element;
 import org.gstreamer.Gst;
-import org.gstreamer.swing.VideoComponent; 
+import org.gstreamer.elements.PlayBin2;
+import org.gstreamer.swing.VideoComponent;
 
 public class VideoConferenceGUI extends JFrame{ 
     private JFrame frame;
     private JPanel sidebarPanel;
     private JButton joinButton;
     private JPanel videoPanel;
-    
+    private PlayBin2 pipeline;
     //Save the dimension of the panel with the button "join"
     private final Dimension panelDimension = new Dimension(180,400);
     
@@ -181,7 +186,7 @@ public class VideoConferenceGUI extends JFrame{
     	}    	
     }
     
-    private class StreamListener extends Thread{
+    private class StreamListener extends Thread {
     	InetAddress host;
     	int port;
     	MulticastSocket socket;
@@ -220,13 +225,33 @@ public class VideoConferenceGUI extends JFrame{
     	
     	@Override
     	public void run() {
+    		pipeline = new PlayBin2("Playbin");
+    		pipeline.setVideoSink(videosink);
     		System.out.println("Starting stream listener...");
+    		File f = new File("home/dominik/Videos/Data.mp4");
+    		FileOutputStream fos = null;
+    		pipeline.setInputFile(f);
+    		try {
+				 fos = new FileOutputStream(f);
+			} catch (FileNotFoundException e) {
+
+				e.printStackTrace();
+			}
     	    try {
+    	    	Timer t = new Timer();
+    	    	t.schedule(new TimerTask() {
+					
+					@Override
+					public void run() {
+						pipeline.play();
+					}
+				}, 600);
     	      while (true) {
+    	    	
     	        inPacket = new DatagramPacket(inBuf, inBuf.length);
     	        socket.receive(inPacket);
+    	        fos.write(inBuf);				
     	        
-    	        // TODO push from inBuf into pipeline, ends with videosink
     	      }
     	    } catch (IOException ioe) {
     	    	stopConnection(addr);
