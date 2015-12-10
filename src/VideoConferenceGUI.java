@@ -72,7 +72,7 @@ public class VideoConferenceGUI extends JFrame{
     
     public VideoConferenceGUI(VideoConferenceClient c, String[] args) {
     	client = c;
-        args = Gst.init(client.multicastAddress, args); 
+//        args = Gst.init(client.multicastAddress, args); 
         
         System.out.println("Init GUI");
 
@@ -108,7 +108,7 @@ public class VideoConferenceGUI extends JFrame{
             } 
         }); 
         
-        //Gst.main();
+   
     }
     
     public void addNewStream(String address) {
@@ -230,11 +230,11 @@ public class VideoConferenceGUI extends JFrame{
     		pipeline.setVideoSink(videosink);
     		System.out.println("Starting stream listener...");
 
-//    		File f = new File("/home/dominik/Videos/Data.mp4");
+    		File f = new File("/home/dominik/Videos/Data.mp4");
 
-    		File f = new File("/home/jurij/Downloads/Data.mp4");
+//    		File f = new File("/home/jurij/Downloads/Data.mp4");
     		FileOutputStream fos = null;
-    		pipeline.setInputFile(f);
+    		pipeline.setInputFile(new File("/home/dominik/Videos/Lion.webm"));
     		try {
 				 fos = new FileOutputStream(f);
 			} catch (FileNotFoundException e) {
@@ -248,6 +248,7 @@ public class VideoConferenceGUI extends JFrame{
 					@Override
 					public void run() {
 						pipeline.play();
+						System.out.println("Playing");
 					}
 				}, 750);
     	      while (true) {

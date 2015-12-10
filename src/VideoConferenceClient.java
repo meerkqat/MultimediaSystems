@@ -21,7 +21,7 @@ import org.gstreamer.elements.AppSink;
 
 public class VideoConferenceClient {
 	public String multicastAddress = "232.2.3.5:7777";
-	public String localIP = "10.42.0.1";
+	public String localIP = "172.16.25.126";
 	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
@@ -38,6 +38,7 @@ public class VideoConferenceClient {
 
 		// start gui
 		gui = new VideoConferenceGUI(this, args);
+		Gst.main();
 	}
 
 	// on join channel
@@ -126,7 +127,8 @@ public class VideoConferenceClient {
 					"video/x-raw-yuv, width=%s, height=%s"
 							+ ", bpp=24, depth=16,framerate=%s/1", "640",
 					"480", "30")));
-			final Element encoder = ElementFactory.make("ffenc_mpeg4", "encoder");
+			final Element encoder = ElementFactory.make("ffenc_mpeg4",
+					"encoder");
 			final Element formatConverter = ElementFactory.make(
 					"ffmpegcolorspace", "formatConverter");
 			final Element muxer = ElementFactory.make("ffmux_mpeg", "muxer");
@@ -149,10 +151,8 @@ public class VideoConferenceClient {
 				}
 			});
 			outPipe = new Pipeline("outPipe");
-			outPipe.addMany(v4l2src, formatConverter, filter, encoder, muxer,
-					appsink);
-			Element.linkMany(v4l2src, formatConverter, filter, encoder, muxer,
-					appsink);
+			outPipe.addMany(v4l2src, formatConverter, filter, encoder, appsink);
+			Element.linkMany(v4l2src, formatConverter, filter, encoder, appsink);
 			outPipe.setState(org.gstreamer.State.PLAYING);
 			if (socket == null || host == null)
 				interrupt();
