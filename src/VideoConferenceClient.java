@@ -20,7 +20,7 @@ import org.gstreamer.Pipeline;
 import org.gstreamer.elements.AppSink;
 
 public class VideoConferenceClient {
-	public String multicastAddress = "232.2.3.5:7777";
+	public String multicastAddress = "232.2.3.12:8898";
 	public String localIP = "172.16.25.126";
 	private Socket socket;
 	private PrintWriter out;
@@ -130,9 +130,7 @@ public class VideoConferenceClient {
 			final Element v4l2src = ElementFactory.make("v4l2src", "v4l2src");
 			final Element filter = ElementFactory.make("capsfilter", "filter");
 			filter.setCaps(Caps.fromString(String.format(
-					"video/x-raw-yuv, width=%s, height=%s"
-							+ ", bpp=24, depth=16,framerate=%s/1", "640",
-					"480", "30")));
+					"video/x-raw-yuv, width=%s, height=%s", "640","480")));
 			final Element encoder = ElementFactory.make("ffenc_mpeg4",
 					"encoder");
 			final Element formatConverter = ElementFactory.make(
@@ -146,6 +144,7 @@ public class VideoConferenceClient {
 			final Element udpsink = ElementFactory.make("udpsink","sink");
 	        udpsink.set("host", hostString);
 		    udpsink.set("port", port);
+		    udpsink.set("auto-multicast", 1);
 		    /*
 			appsink.set("emit-signals", true);
 			appsink.setSync(false);

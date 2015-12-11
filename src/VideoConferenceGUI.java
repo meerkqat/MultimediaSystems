@@ -239,7 +239,10 @@ public class VideoConferenceGUI extends JFrame{
     		//pipeline.setVideoSink(videosink);
 
     		final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-    	    udpsrc.set("uri", "udp://"+hostString+":"+port);
+    		//udpsrc.set("uri", "udp://"+hostString+":"+port);
+    		udpsrc.set("multicast-group", hostString);
+    	    udpsrc.set("port", port);
+    	    udpsrc.set("auto-multicast", 1);
     	    udpsrc.set("caps", Caps.fromString("application/x-rtp, payload=127"));
     	    final Element rtph264depay = ElementFactory.make("rtph264depay", "payldr");
     	    final Element ffdec_h264 = ElementFactory.make("ffdec_h264", "decoder");
