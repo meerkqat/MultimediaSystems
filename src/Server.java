@@ -31,7 +31,7 @@ import org.gstreamer.swing.VideoComponent;
 
 public class Server {
 
-	private static final Logger logger = Logger.getLogger(Client.class
+	private static final Logger logger = Logger.getLogger(Server.class
 			.getName());
 
 	private static Pipeline outPipe;

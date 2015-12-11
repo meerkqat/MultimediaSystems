@@ -26,8 +26,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import org.gstreamer.Caps;
 import org.gstreamer.Element;
+import org.gstreamer.ElementFactory;
 import org.gstreamer.Gst;
+import org.gstreamer.Pipeline;
 import org.gstreamer.elements.PlayBin2;
 import org.gstreamer.swing.VideoComponent;
 
@@ -36,7 +39,7 @@ public class VideoConferenceGUI extends JFrame{
     private JPanel sidebarPanel;
     private JButton joinButton;
     private JPanel videoPanel;
-    private PlayBin2 pipeline;
+    private Pipeline pipeline;
     //Save the dimension of the panel with the button "join"
     private final Dimension panelDimension = new Dimension(180,400);
     
@@ -187,28 +190,32 @@ public class VideoConferenceGUI extends JFrame{
     }
     
     private class StreamListener extends Thread {
-    	InetAddress host;
+    	//InetAddress host;
+    	String hostString;
     	int port;
-    	MulticastSocket socket;
-    	DatagramPacket inPacket;
-    	byte[] inBuf;
-    	String addr;
+    	//MulticastSocket socket;
+    	//DatagramPacket inPacket;
+    	//byte[] inBuf;
+    	//String addr;
     	Element videosink;
     	
     	public StreamListener(String address, Element vsink) {
     		System.out.println("Stream listener init");
     		
-    		addr = address;
+    		//addr = address;
     		String[] banana = address.split(":");
-			try {
+			/*
+    		try {
 				host = InetAddress.getByName(banana[0]);
 			}
 			catch (UnknownHostException e) {
 				System.out.println("Error getting multicast address!");
 				e.printStackTrace();
 			}
+			*/
+    		hostString = banana[0];
 			port = Integer.valueOf(banana[1]);
-			
+			/*
 			try {
 				socket = new MulticastSocket(port);
 				socket.setInterface(InetAddress.getByName(client.localIP));
@@ -218,18 +225,34 @@ public class VideoConferenceGUI extends JFrame{
 				System.out.println("Error opening socket!");
 				e.printStackTrace();
 			}
+			*/
 			
 			videosink = vsink;
 			
-			inBuf = new byte[42];
+			//inBuf = new byte[42];
 		}
     	
     	@Override
     	public void run() {
-    		pipeline = new PlayBin2("Playbin");
-    		pipeline.setVideoSink(videosink);
-    		System.out.println("Starting stream listener...");
+    		//System.out.println("Starting stream listener...");
+    		pipeline = new Pipeline("Playbin");
+    		//pipeline.setVideoSink(videosink);
 
+    		final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+    	    udpsrc.set("uri", "udp://"+hostString+":"+port);
+    	    udpsrc.set("caps", Caps.fromString("application/x-rtp, payload=127"));
+    	    final Element rtph264depay = ElementFactory.make("rtph264depay", "payldr");
+    	    final Element ffdec_h264 = ElementFactory.make("ffdec_h264", "decoder");
+    	    
+    	    pipeline.addMany(udpsrc, rtph264depay, ffdec_h264, videosink);
+            Element.linkMany(udpsrc, rtph264depay, ffdec_h264, videosink);
+            
+            pipeline.setState(org.gstreamer.State.PLAYING);
+            
+            System.out.println("Started stream listener...");
+    	    
+    	    /*
+    		
     		File f = new File("/home/dominik/Videos/Data.mp4");
 
 //    		File f = new File("/home/jurij/Downloads/Data.mp4");
@@ -262,6 +285,7 @@ public class VideoConferenceGUI extends JFrame{
     	    	stopConnection(addr);
     	    	interrupt();
     	    }
+    	    */
     	}
     }
 }

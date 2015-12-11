@@ -27,8 +27,7 @@ public class VideoConferenceClient {
 	private BufferedReader in;
 	private VideoConferenceGUI gui;
 	private Thread listenLoop;
-	private AppSink appsink = (AppSink) ElementFactory.make("appsink",
-			"appsink");
+	//private AppSink appsink = (AppSink) ElementFactory.make("appsink","appsink");
 	private Pipeline outPipe;
 
 	public VideoConferenceClient(String[] args) {
@@ -90,22 +89,25 @@ public class VideoConferenceClient {
 	}
 
 	private class Streamer extends Thread {
-		MulticastSocket socket;
-		InetAddress host;
+		//MulticastSocket socket;
+		//InetAddress host;
+		String hostString;
 		int port;
 
-		byte[] outBuf;
+		//byte[] outBuf;
 
 		public Streamer(String streamTo) {
 			System.out.println("Init cam streamer");
 			String[] banana = streamTo.split(":");
+			hostString = banana[0];
+			port = Integer.valueOf(banana[1]);
+			/*
 			try {
 				host = InetAddress.getByName(banana[0]);
 			} catch (UnknownHostException e) {
 				System.out.println("Error getting multicast address!");
 				e.printStackTrace();
 			}
-			port = Integer.valueOf(banana[1]);
 
 			try {
 				socket = new MulticastSocket(port);
@@ -114,12 +116,16 @@ public class VideoConferenceClient {
 				System.out.println("Error opening multicast socket!");
 				e.printStackTrace();
 			}
+			*/
 
-			outBuf = new byte[42];
+			//outBuf = new byte[42];
 		}
 
 		@Override
 		public void run() {
+			if (hostString == null || hostString.length() < 0)
+				interrupt();
+			
 			// init appsink
 			final Element v4l2src = ElementFactory.make("v4l2src", "v4l2src");
 			final Element filter = ElementFactory.make("capsfilter", "filter");
@@ -136,7 +142,11 @@ public class VideoConferenceClient {
 					"ratefilter");
 			ratefilter.setCaps(Caps.fromString(String.format(
 					"video/x-raw-yuv,framerate=%s/1", "30")));
-
+			
+			final Element udpsink = ElementFactory.make("udpsink","sink");
+	        udpsink.set("host", hostString);
+		    udpsink.set("port", port);
+		    /*
 			appsink.set("emit-signals", true);
 			appsink.setSync(false);
 			appsink.connect(new AppSink.NEW_BUFFER() {
@@ -150,15 +160,15 @@ public class VideoConferenceClient {
 					byteBuffer.get(outBuf);
 				}
 			});
+			*/
 			outPipe = new Pipeline("outPipe");
-			outPipe.addMany(v4l2src, formatConverter, filter, encoder, appsink);
-			Element.linkMany(v4l2src, formatConverter, filter, encoder, appsink);
+			outPipe.addMany(v4l2src, formatConverter, filter, encoder, udpsink);
+			Element.linkMany(v4l2src, formatConverter, filter, encoder, udpsink);
 			outPipe.setState(org.gstreamer.State.PLAYING);
-			if (socket == null || host == null)
-				interrupt();
 
 			System.out.println("Streaming webcam...");
 
+			/*
 			try {
 				DatagramPacket outPacket;
 				while (true) {
@@ -171,6 +181,7 @@ public class VideoConferenceClient {
 				System.out.println("Error sending to multicast address!");
 				e.printStackTrace();
 			}
+			*/
 		}
 	}
 
