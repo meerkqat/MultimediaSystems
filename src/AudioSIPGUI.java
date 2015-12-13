@@ -22,8 +22,6 @@ import org.gstreamer.ElementFactory;
 import org.gstreamer.Pipeline;
 import org.gstreamer.swing.VideoComponent;
 
-import VideoConferenceGUI.StreamListener;
-
 
 public class AudioSIPGUI {
 	private JFrame frame;
