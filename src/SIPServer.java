@@ -11,6 +11,7 @@ public class SIPServer {
 	private int port = 1234;
 	private HashMap<String, Socket> clients;
 	
+	@SuppressWarnings("resource")
 	public SIPServer() {
 		clients = new HashMap<>();
 		
@@ -67,7 +68,7 @@ public class SIPServer {
 		// "CODE sip:to@domain.tld CodeUtil.CODE"
 		// "ACK sip:to@domain.tld"
 		// "DISCONNECT sip:from@domain.tld"
-		// optional additional params after what is specified above (space separated)
+		// optional additional params can be added after what is specified above (again space separated)
 		public void run() {
 			while (true) {
 				// read command
@@ -88,7 +89,7 @@ public class SIPServer {
 				// forward message to destination, swap receiver for sender
 				else if (banana[0].equals("INVITE") || banana[0].equals("CODE") || banana[0].equals("ACK")) {
 					banana[1] = getIdFromSocket(client);
-					forward(banana[1], join(banana, " ")); // TODO GOT STUCK IN CLIENT? append newline here
+					forward(banana[1], join(banana, " ")+"\n");
 				}
 				// client requested disconnect
 				else if (banana[0].equals("DISCONNECT")) {

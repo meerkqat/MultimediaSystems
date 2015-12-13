@@ -2,17 +2,26 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
 public class SIPClient {
-
+	// TODO handle hangup
+	
 	// no spaces in URI!!
 	private final String myURI = "sip:DonkeyKong@mario.kart";
 	private final String myIP = "127.0.0.1";
 	private final int myPort = 5060;
+	private final int TCPPort = 2345;
 	private String remoteIP;
 	private int remotePort;
+	
+	public final int PREINIT = -1;
+	public final int FREE = 0;
+	public final int BUSY = 1;
+	
+	private int myState = PREINIT;
 	
 	private final int millisToWaitForError = 2000; 
 	
@@ -20,13 +29,21 @@ public class SIPClient {
 	private PrintWriter out;
 	private BufferedReader in;
 	
+	private ServerSocket localServerSocket;
 	private Socket remote;
 	private PrintWriter remoteOut;
 	private BufferedReader remoteIn;
 	
 	private ServerListener serverListener;
+	private RemoteListener remoteListener;
 	
-	public SIPClient () {}
+	public SIPClient () {
+		
+		
+		// TODO init GUI
+		
+		
+	}
 	
 	// call from GUI when you enter the server IP
 	public void connectToServer(String host, int port) {
@@ -46,6 +63,8 @@ public class SIPClient {
 				System.out.println("Connected & registered");
 				serverListener = new ServerListener();
 				serverListener.start();
+				
+				myState = FREE;
 			}
 			else {
 				System.out.println("Could not register "+myURI+"\nDisconnecting...");
@@ -75,12 +94,21 @@ public class SIPClient {
 		} catch (IOException e) {}
 		
 		server = null;
+		
+		myState = PREINIT;
+	}
+	
+	// returns the state of this client (free, calling, receiving call)
+	public int getState() {
+		return myState;
 	}
 	
 	// establishes a VoIP connection with calleeURI
 	// callee should provide its IP & port as optional params appended to the 200-OK message
 	// caller should provide its IP & port as optional params appended to the ACK message
 	public void call(String calleeURI) {
+		myState = BUSY;
+		
 		String response;
 		try {
 			// pause server listener so it doesn't eat up our responses from the sever
@@ -96,6 +124,9 @@ public class SIPClient {
 				String[] banana = response.split(" ");
 				remoteIP = banana[3];
 				remotePort = Integer.valueOf(banana[4]);
+				
+				remoteListener = new LocalServer();
+				remoteListener.run();
 				
 				// ACK ->
 				out.write("ACK "+calleeURI+" "+myIP+" "+myPort+"\n");
@@ -122,6 +153,12 @@ public class SIPClient {
 				
 				
 			}
+			else if (response.contains(CodeUtil.RequestTerminated)) {
+				System.out.println("Callee declined the call");
+			}
+			else if (response.contains(CodeUtil.BusyHere)) {
+				System.out.println("Callee is busy");
+			}
 			else {
 				System.out.println("Unable to call "+calleeURI+" - "+response.split(" ")[2]);
 			}
@@ -137,16 +174,20 @@ public class SIPClient {
 	// callee should provide its IP & port as optional params appended to the 200-OK message
 	// caller should provide its IP & port as optional params appended to the ACK message
 	public void pickUp(String callerURI) {
+		myState = BUSY;
 		String response;
 		try {
 			serverListener.pause();
-			out.write("CODE "+callerURI+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
+			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
 			
 			response = in.readLine();
 			if (response.startsWith("ACK")) {
 				String[] banana = response.split(" ");
 				remoteIP = banana[2];
 				remotePort = Integer.valueOf(banana[3]);
+				
+				remoteListener = new RemoteListener();
+				remoteListener.run();
 				
 				// restore server listener
 				serverListener.unpause();
@@ -167,14 +208,18 @@ public class SIPClient {
 		serverListener.unpause();
 	}
 	
-	public void closeCall() {
-		// TODO in call create serversocket, in pickUp create socket, connect to caller 
-		// TODO another listener thread
-		// TODO send BYE to remote, receive 200-OK
-		
-		// TODO handle hangup, cancel, busy
+	// decline current call
+	public void declineCall(String callerURI) {
+		out.write("CODE "+callerURI+" "+CodeUtil.RequestTerminated+"\n");
+		out.flush();
 	}
 	
+	// disconnect from current call
+	public void closeCall() {
+		remoteListener.endCall();
+	}
+	
+	// listens to messages coming from the sip server (invites)
 	private class ServerListener extends Thread {
 		
 		private boolean isPaused = false;
@@ -208,8 +253,16 @@ public class SIPClient {
 				}
 				
 				if (line.startsWith("INVITE")) {
+					String[] banana = line.split(" ");
+					if (myState == BUSY) {
+						out.write("CODE "+banana[1]+" "+CodeUtil.BusyHere+"\n");
+						out.flush();
+						continue;
+					}
 					
-					// TODO enable the pick up button or make a popup window or something
+					
+					// TODO enable the pick up button or make a popup window or something call pickUp or declineCall
+					
 					
 				}
 				else {
@@ -219,7 +272,111 @@ public class SIPClient {
 		}
 	}
 	
-	public static void main(String[] args) {
+	// thread that connects to the caller via a Socket to be able to send/receive the BYE signal
+	private class RemoteListener extends Thread {
+		protected boolean inCall = true;
 		
+		public RemoteListener() {
+			try {
+				remote = new Socket(remoteIP, TCPPort);
+				remoteOut = new PrintWriter(remote.getOutputStream(), true);
+				remoteIn = new BufferedReader(new InputStreamReader(remote.getInputStream()));
+			}
+			catch (IOException e) {
+				System.out.println("Could not open connection to remote!");
+			}
+		}
+		
+		public void endCall() {
+			inCall = false;
+		}
+		
+		protected void doCall() {
+			try {
+				String msg;
+				while (inCall) {
+					msg = "";
+					try {
+						msg = remoteIn.readLine();
+					} catch (SocketTimeoutException e) {}
+					if (msg.startsWith("BYE")) {
+						remoteOut.write("CODE "+CodeUtil.OK+"\n");
+						remoteOut.flush();
+						
+						remoteIn.close();
+						remoteOut.close();
+						remote.close();
+						localServerSocket.close();
+						inCall = false;
+					}
+					else {
+						System.out.println("Unexpected message from remote: "+msg);
+					}
+				}
+				
+				// we broke out of the while, but didn't get a BYE message, 
+				// therefore we must be ending the call
+				if(!remote.isClosed()) {
+					remoteOut.write("BYE\n");
+					remoteOut.flush();
+					remote.setSoTimeout(0);
+					msg = remoteIn.readLine();
+					
+					if (msg.contains(CodeUtil.OK)) {
+						remoteIn.close();
+						remoteOut.close();
+						remote.close();
+						localServerSocket.close();
+					}
+					else {
+						System.out.println("Unexpected message from remote: "+msg);
+					}
+				}
+				
+				myState = FREE;
+			}
+			catch (IOException e) {
+				System.out.println("Error occured talking to remote!");
+			}
+		}
+		
+		@Override
+		public void run() {
+			doCall();
+		}
+	}
+	
+	// a thread that runs a local server when making a call - used to send/receive BYE signal 
+		private class LocalServer extends RemoteListener {
+			
+			// init server socket
+			public LocalServer() {
+				try {
+					localServerSocket = new ServerSocket(TCPPort);
+				} 
+				catch (IOException E) {
+					System.out.println("Error establishing server socket!");
+				}
+			}
+			
+			@Override
+			public void run() {
+				try {
+					// open connection
+					remote = localServerSocket.accept();
+					remote.setSoTimeout(500);
+					remoteOut = new PrintWriter(remote.getOutputStream(), true);
+					remoteIn = new BufferedReader(new InputStreamReader(remote.getInputStream()));
+					
+					doCall();
+				}
+				catch (IOException e) {
+					System.out.println("Error occured connecting to remote!");
+				}
+			}
+		}
+	
+	public static void main(String[] args) {
+		new SIPClient();
 	}
 }
