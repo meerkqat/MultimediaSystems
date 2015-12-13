@@ -34,7 +34,17 @@ public class SIPServer {
 		}
 	}
 	
+	// get key by value from clients hashmap
+	private String getIdFromSocket(Socket value) {
+		for (String id : clients.keySet()) {
+			if (clients.get(id).equals(value)) {
+				return id;
+			}
+		}
+		return null;
+	}
 	
+	// handles any new connection
 	private class ConnectionHandler extends Thread {
 		private Socket client;
 		private PrintWriter out;
@@ -51,38 +61,81 @@ public class SIPServer {
 			}
 		}
 		
-		// connect to client, send opcode + arguments (space separated)
-		// "REGISTER client@sip.whatever"
-		// "INVITE client@sip.stuff"
-		// "CODE client@sip.blerf 200"
-		// "ACK client@sip.beepboop"
+		// start listening to client -> get opcode + arguments (space separated)
+		// "REGISTER sip:from@domain.tld"
+		// "INVITE sip:to@domain.tld"
+		// "CODE sip:to@domain.tld CodeUtil.CODE"
+		// "ACK sip:to@domain.tld"
+		// "DISCONNECT sip:from@domain.tld"
+		// optional additional params after what is specified above (space separated)
 		public void run() {
-			String line = "";
-			try { 
-				line = in.readLine();
-			}
-			catch (IOException e) {
-				System.out.println("Error reading from socket!");
-			}
-			
-			String[] banana = line.split(" ");
-			if(banana[0].equals("REGISTER")) {
-				register(banana[1]);
-			}
-			else if (banana[0].equals("INVITE") || banana[0].equals("CODE") || banana[0].equals("ACK")) {
-				forward(banana[1], line);
+			while (true) {
+				// read command
+				String line = "";
+				try { 
+					line = in.readLine();
+				}
+				catch (IOException e) {
+					System.out.println("Error reading from socket!");
+					interrupt();
+				}
+				
+				String[] banana = line.split(" ");
+				// register new client
+				if(banana[0].equals("REGISTER")) {
+					register(banana[1]);
+				}
+				// forward message to destination, swap receiver for sender
+				else if (banana[0].equals("INVITE") || banana[0].equals("CODE") || banana[0].equals("ACK")) {
+					banana[1] = getIdFromSocket(client);
+					forward(banana[1], join(banana, " ")); // TODO GOT STUCK IN CLIENT? append newline here
+				}
+				// client requested disconnect
+				else if (banana[0].equals("DISCONNECT")) {
+					clients.remove(banana[1]);
+					try {
+						out.close();
+						in.close();
+						client.close();
+					} catch (IOException e) {}
+					break;
+				}
+				// bad opcode
+				else {
+					out.write("CODE "+banana[1]+" "+CodeUtil.BadEvent+"\n");
+					out.flush();
+				}
 			}
 			
 		}
 		
-		public void register(String id) {
-			clients.put(id, client);
-			out.write("CODE 200");
+		// register new client
+		private void register(String id) {
+			String response;
+			if (clients.containsKey(id)) {
+				response = "CODE "+id+" "+CodeUtil.Conflict+"\n";
+			}
+			else {
+				clients.put(id, client);
+				response = "CODE "+id+" "+CodeUtil.OK+"\n";
+			}
+			
+			out.write(response);
 			out.flush();
 		}
 		
-		public void forward(String id, String msg) {
+		// forward msg to id
+		private void forward(String id, String msg) {
 			Socket dest = clients.get(id);
+			
+			// check if client with id exists
+			if (!clients.containsKey(id)) {
+				out.write("CODE "+id+" "+CodeUtil.NotFound+"\n");
+				out.flush();
+				return;
+			}
+			
+			// forward to id
 			try {
 				PrintWriter pw = new PrintWriter(dest.getOutputStream(), true);
 				pw.write(msg);
@@ -90,7 +143,20 @@ public class SIPServer {
 			}
 			catch (IOException e) {
 				System.out.println("Error opening out stream to destination!");
+				out.write("CODE "+id+" "+CodeUtil.Gone+"\n");
+				out.flush();
 			}
+		}
+		
+		// join string array into string
+		private String join(String[] arr, String token) {
+			StringBuilder sb = new StringBuilder();
+			boolean first = true;
+			for(String item : arr){
+				if(!first || (first = false)) sb.append(token);
+				sb.append(item);
+			}
+			return sb.toString();
 		}
 	}
 	
