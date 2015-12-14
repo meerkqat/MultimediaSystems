@@ -1,15 +1,14 @@
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -25,42 +24,28 @@ import org.gstreamer.swing.VideoComponent;
 
 public class AudioSIPGUI {
 	private JFrame frame;
-	private JPanel buttonPanel;
 	private JPanel infoPanel;
 	private JButton callButton;
 	private JButton stopButton;
 	private Pipeline pipeline;
+	private JLabel connectionLabel;
+	private JLabel listLabel;
 
-	private final Dimension buttonPanelDimension = new Dimension(180,400);
-	private final Dimension infoPanelDimension = new Dimension(180,400);
-	
-//NAME OF CLIENT 
-	private VideoConferenceClient client;
+	private SIPClient client;
 	
 	private String[] connections = new String[4];
 	
-	//If the window is resize, we have to resize each component
-	private ComponentAdapter resizeListener = new ComponentAdapter() {  
-	    public void componentResized(ComponentEvent evt) {
-	    	//save the window's dimensions
-		    Dimension windowSize = frame.getSize();
-		    //resize each component according to the window's dimensions
-		    infoPanel.setPreferredSize(new Dimension(180,windowSize.height-10));
-            buttonPanel.setPreferredSize(new Dimension(windowSize.width-180,windowSize.height-10));
-            callButton.setPreferredSize(new Dimension(buttonPanelDimension.width-10,30));
-            stopButton.setSize(new Dimension(buttonPanelDimension.width-10,30));
-        }
-	};
 	
-	//Join a conference
+	//Invite someone
 	private ActionListener callClick = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			//create a dialog box
-			String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
+			String address = (String)JOptionPane.showInputDialog(frame, "Enter address:\n","Callee address", JOptionPane.PLAIN_MESSAGE,null, null,"");
 			System.out.println("Join dialog retured "+address);
 			if (address != null && address.length() > 0) {
-				client.join(address);
+				client.call(address);
+				connectionLabel=new JLabel("calling...");
 			}
 		}
 	};
@@ -70,11 +55,56 @@ public class AudioSIPGUI {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("Stop");
-			//stopConnection();
+			if(client.getState()==client.BUSY){
+				client.closeCall();
+				connectionLabel=new JLabel("No connection");
+			}
 		}
 	};
 	
-	public AudioSIPGUI(VideoConferenceClient c, String[] args) {
+	//Receiving call- accept or deny
+	public void receivingCall(String calleeURI){
+		System.out.println("Receivig call");
+					
+		int option = JOptionPane.showConfirmDialog(null, "Do you accept the call ?", "Receiving call", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					
+		if(option == JOptionPane.OK_OPTION){
+		  System.out.println("Accep");
+		  client.pickUp(calleeURI);
+		  connectionLabel=new JLabel("Connection OK");
+		}
+		else{
+			System.out.println("Deny");
+			client.declineCall(calleeURI);
+			connectionLabel=new JLabel("No connection");
+		}
+	}
+	
+	//Join Server pressing ctrl S
+	private KeyEventDispatcher keyboardListener = new KeyEventDispatcher(){
+		
+		public boolean dispatchKeyEvent(KeyEvent e){
+			if(e.getID() == KeyEvent.KEY_PRESSED){
+				if(e.getKeyCode() == KeyEvent.VK_S && ((e.getModifiers() &KeyEvent.CTRL_MASK )!=0)){
+	
+			        //Join Server
+			        String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
+					System.out.println("Join dialog retured "+address);
+					if (address != null && address.length() > 0) {
+						String[] banana=address.split(":");
+						client.connectToServer(banana[0],Integer.valueOf(banana[1]));
+						
+					}
+				}
+			}
+			return false;
+		}
+		
+	};
+	
+
+	
+	public AudioSIPGUI(SIPClient c) {
     	client = c;
         
         System.out.println("Init GUI");
@@ -82,19 +112,29 @@ public class AudioSIPGUI {
         SwingUtilities.invokeLater(new Runnable() { 
             public void run() { 
                 //Create a new frame 
-                frame = new JFrame(client.multicastAddress); 
+                frame = new JFrame("test"); 
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-                frame.setMinimumSize(new Dimension(300,300)); 
-                frame.setLayout(new FlowLayout());
-                frame.setPreferredSize(new Dimension(600,600));                
-                frame.addComponentListener(resizeListener);
+                frame.setMinimumSize(new Dimension(400,200)); 
+                frame.setLayout(new BorderLayout());
+                frame.setPreferredSize(new Dimension(400,300));                
+                
+                KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+                kfm.addKeyEventDispatcher(keyboardListener);
+                
                 frame.pack(); 
                 frame.setVisible(true);
+                
+                listLabel = new JLabel("List of participants");
+                listLabel.setHorizontalAlignment(JLabel.CENTER);
+                listLabel.setForeground(Color.white);
                 
                 infoPanel = new JPanel();
                 infoPanel.setBackground(Color.black);
                 
-                buttonPanel = new JPanel();
+                infoPanel.add(listLabel);
+                
+                connectionLabel = new JLabel("No connection");
+                connectionLabel.setHorizontalAlignment(JLabel.CENTER);
                 
                 callButton = new JButton("Invite");
                 callButton.addActionListener(callClick);
@@ -102,46 +142,26 @@ public class AudioSIPGUI {
                 stopButton = new JButton("Bye");
                 stopButton.addActionListener(stopClick);
                 
-                resizeListener.componentResized(null);
+                //add components to the frame      
+                frame.getContentPane().add(callButton, BorderLayout.NORTH);
+                frame.getContentPane().add(stopButton, BorderLayout.SOUTH);
+                frame.getContentPane().add(connectionLabel,BorderLayout.CENTER);
+                frame.getContentPane().add(infoPanel,BorderLayout.EAST);
                 
-                buttonPanel.setLayout(new FlowLayout());
-                
-                //add button to the panel
-                buttonPanel.add(callButton);
-                buttonPanel.add(stopButton);
-                
-                //add panels to the frame
-                frame.add(infoPanel);
-                frame.add(buttonPanel);
-                
+                //Join Server
+                String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
+    			System.out.println("Join dialog retured "+address);
+    			if (address != null && address.length() > 0) {
+    				String[] banana=address.split(":");
+    				client.connectToServer(banana[0],Integer.valueOf(banana[1]));
+    			}
             } 
         }); 
         
 	}
+
 	
-    public JComponent findByName(String name, JComponent c){
-    	if(c.getName().equals(name)){
-    		return c;
-    	}
-    	JComponent tmp = null;
-    	for(int i =0;i<c.getComponentCount();i++){
-    		tmp = findByName(name,(JComponent)c.getComponent(i));
-    	}
-    	return tmp;
-    }
-    
-    public void stopConnection(String address){
-    	System.out.println("Stopping "+address);
-    	
-    	buttonPanel.remove(findByName(address,buttonPanel));
-    	infoPanel.remove(findByName(address,infoPanel));
-    	for(int i=0;i<4;i++){
-    		if(connections[i].equals(address)){
-    			connections[i] = null;
-    			break;
-    		}
-    	}    	
-    }
+	
 
     public void addNewStream(String address) {
     	if (address.length() == 0) return;
@@ -163,6 +183,7 @@ public class AudioSIPGUI {
     			break;
     		}
     	}
+    	//connexionLabel
     	
     	Thread stream = new StreamListener(address, videosink);
     	stream.start();

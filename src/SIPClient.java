@@ -37,8 +37,10 @@ public class SIPClient {
 	private ServerListener serverListener;
 	private RemoteListener remoteListener;
 	
+	private AudioSIPGUI gui;
+	
 	public SIPClient () {
-		
+		gui = new AudioSIPGUI(this);
 		
 		// TODO init GUI
 		
@@ -262,7 +264,7 @@ public class SIPClient {
 					
 					
 					// TODO enable the pick up button or make a popup window or something call pickUp or declineCall
-					
+					gui.receivingCall(banana[1]);
 					
 				}
 				else {
