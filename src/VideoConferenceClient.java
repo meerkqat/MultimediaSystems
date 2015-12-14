@@ -20,7 +20,7 @@ import org.gstreamer.Pipeline;
 import org.gstreamer.elements.AppSink;
 
 public class VideoConferenceClient {
-	public String multicastAddress = "232.2.3.12:8898";
+	public String multicastAddress = "130.240.157.150:9989";
 	public String localIP = "172.16.25.126";
 	private Socket socket;
 	private PrintWriter out;
@@ -123,28 +123,25 @@ public class VideoConferenceClient {
 
 		@Override
 		public void run() {
-			if (hostString == null || hostString.length() < 0)
+			if (hostString == null || hostString.length() < 1)
 				interrupt();
 			
 			// init appsink
-			final Element v4l2src = ElementFactory.make("v4l2src", "v4l2src");
-			final Element filter = ElementFactory.make("capsfilter", "filter");
-			filter.setCaps(Caps.fromString(String.format(
-					"video/x-raw-yuv, width=%s, height=%s", "640","480")));
-			final Element encoder = ElementFactory.make("ffenc_mpeg4",
-					"encoder");
-			final Element formatConverter = ElementFactory.make(
-					"ffmpegcolorspace", "formatConverter");
-			final Element muxer = ElementFactory.make("ffmux_mpeg", "muxer");
-			final Element ratefilter = ElementFactory.make("capsfilter",
-					"ratefilter");
-			ratefilter.setCaps(Caps.fromString(String.format(
-					"video/x-raw-yuv,framerate=%s/1", "30")));
+			final Element v4l2src = ElementFactory.make("v4l2src","videosrc");
+	        final Element filter = ElementFactory.make("capsfilter","filter");
+	        filter.setCaps(Caps.fromString("video/x-raw-yuv, width=640, height=480")); 
+	        final Element encoder = ElementFactory.make("x264enc","encoder");
+	        encoder.set("quantizer", "20");
+	        encoder.set("tune", "4"); 
+	        final Element rtph264pay = ElementFactory.make("rtph264pay","payloader");
+	        final Element udpsink = ElementFactory.make("udpsink","sink");
 			
-			final Element udpsink = ElementFactory.make("udpsink","sink");
-	        udpsink.set("host", hostString);
+			udpsink.set("host", hostString);
 		    udpsink.set("port", port);
-		    udpsink.set("auto-multicast", 1);
+		    udpsink.set("auto-multicast", "true");
+		    
+		    // gst-launch udpsrc port= ! "application/x-rtp, payload=127" ! rtph264depay ! ffdec_h264 ! xvimagesink sync=false
+		    
 		    /*
 			appsink.set("emit-signals", true);
 			appsink.setSync(false);
@@ -161,8 +158,8 @@ public class VideoConferenceClient {
 			});
 			*/
 			outPipe = new Pipeline("outPipe");
-			outPipe.addMany(v4l2src, formatConverter, filter, encoder, udpsink);
-			Element.linkMany(v4l2src, formatConverter, filter, encoder, udpsink);
+			outPipe.addMany(v4l2src, filter, encoder, rtph264pay, udpsink);
+			Element.linkMany(v4l2src, filter, encoder, rtph264pay, udpsink);
 			outPipe.setState(org.gstreamer.State.PLAYING);
 
 			System.out.println("Streaming webcam...");
