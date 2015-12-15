@@ -16,7 +16,7 @@ public class SIPClient {
 
 	// no spaces in URI!!
 	private final String myURI = "sip:Peach@mario.kart";
-	private final String myIP = "130.240.158.252";
+	private final String myIP = "130.240.157.150";
 	private final int myPort = 5060;
 	private final int TCPPort = 2345;
 	private String remoteIP;
@@ -43,7 +43,7 @@ public class SIPClient {
 	private RemoteListener remoteListener;
 
 	private AudioSIPGUI gui;
-	
+
 	private String SERVER_THREAD_COMM = "";
 
 	public SIPClient() {
@@ -126,86 +126,84 @@ public class SIPClient {
 
 		System.out.println("Calling " + calleeURI);
 
-		String response;			
-			// invite ->
-			out.write("INVITE " + calleeURI + "\n");
+		String response;
+		// invite ->
+		out.write("INVITE " + calleeURI + "\n");
+		out.flush();
+
+		// OK <-
+		while (SERVER_THREAD_COMM.length() < 1) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+			}
+		}
+		response = SERVER_THREAD_COMM;
+		SERVER_THREAD_COMM = "";
+		if (response.contains(CodeUtil.OK)) {
+			String[] banana = response.split(" ");
+			remoteIP = banana[3];
+			remotePort = Integer.valueOf(banana[4]);
+
+			remoteListener = new RemoteListener(true);
+			remoteListener.start();
+
+			// ACK ->
+			out.write("ACK " + calleeURI + " " + myIP + " " + myPort + "\n");
 			out.flush();
 
-			// OK <-
-			while (SERVER_THREAD_COMM.length() < 1) {
-				try{
+			// error CODE <- ?
+			long now = System.currentTimeMillis();
+			while (SERVER_THREAD_COMM.length() < 1
+					&& System.currentTimeMillis() - now < millisToWaitForError) {
+				try {
 					Thread.sleep(50);
+				} catch (InterruptedException e) {
 				}
-				catch (InterruptedException e){} 
 			}
 			response = SERVER_THREAD_COMM;
 			SERVER_THREAD_COMM = "";
-			if (response.contains(CodeUtil.OK)) {
-				String[] banana = response.split(" ");
-				remoteIP = banana[3];
-				remotePort = Integer.valueOf(banana[4]);
 
-				remoteListener = new RemoteListener(true);
-				remoteListener.run();
-
-				// ACK ->
-				out.write("ACK " + calleeURI + " " + myIP + " " + myPort + "\n");
-				out.flush();
-
-				// error CODE <- ?
-				long now = System.currentTimeMillis();
-				while (SERVER_THREAD_COMM.length() < 1 && System.currentTimeMillis()-now < millisToWaitForError) {
-					try{
-						Thread.sleep(50);
-					}
-					catch (InterruptedException e){} 
-				}
-				response = SERVER_THREAD_COMM;
-				SERVER_THREAD_COMM = "";
-
-				if (response.length() > 0) {
-					System.out.println("Error occured sending ACK - "
-							+ response.split(" ")[2]);
-					return;
-				}
-				System.out.println("Direct connection now");
-
-				// TODO establish direct connection to remoteIP:remotePort
-				final Element alsasrc = ElementFactory
-						.make("alsascr", "source");
-				final Element rate = ElementFactory.make("audiorate", "rate");
-				final Element filter = ElementFactory.make("capsfilter",
-						"filter");
-				filter.setCaps(Caps
-						.fromString("audio/x-raw-int,rate=44100,channels=2"));
-				final Element udpsink = ElementFactory.make("udpsink", "sink");
-
-				udpsink.set("host", remoteIP);
-				udpsink.set("port", remotePort);
-				udpsink.set("auto-multicast", "true");
-
-				Pipeline outPipe = new Pipeline("outPipe");
-				outPipe.addMany(alsasrc, rate, filter, udpsink);
-				Element.linkMany(alsasrc, rate, filter, udpsink);
-
-				final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-				final Element audiosink = ElementFactory.make("alsasink",
-						"sink");
-				udpsrc.set("address", remoteIP);
-				udpsrc.set("port", remotePort);
-
-				Pipeline inPipe = new Pipeline("inPipe");
-				inPipe.addMany(udpsrc, audiosink);
-				Element.linkMany(udpsrc, audiosink);
-
-			} else if (response.contains(CodeUtil.RequestTerminated)) {
-				System.out.println("Callee declined the call");
-			} else if (response.contains(CodeUtil.BusyHere)) {
-				System.out.println("Callee is busy");
-			} else {
-				System.out.println("Unable to call " + calleeURI + " - "
+			if (response.length() > 0) {
+				System.out.println("Error occured sending ACK - "
 						+ response.split(" ")[2]);
+				return;
 			}
+			System.out.println("Direct connection now");
+
+			// TODO establish direct connection to remoteIP:remotePort
+			final Element alsasrc = ElementFactory.make("alsasrc", "source");
+			final Element rate = ElementFactory.make("audiorate", "rate");
+			final Element filter = ElementFactory.make("capsfilter", "filter");
+			filter.setCaps(Caps
+					.fromString("audio/x-raw-int,rate=44100,channels=2"));
+			final Element udpsink = ElementFactory.make("udpsink", "sink");
+
+			udpsink.set("host", remoteIP);
+			udpsink.set("port", remotePort);
+			udpsink.set("auto-multicast", "true");
+
+			Pipeline outPipe = new Pipeline("outPipe");
+			outPipe.addMany(alsasrc, rate, filter, udpsink);
+			Element.linkMany(alsasrc, rate, filter, udpsink);
+
+			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			final Element audiosink = ElementFactory.make("alsasink", "sink");
+			udpsrc.set("address", remoteIP);
+			udpsrc.set("port", remotePort);
+
+			Pipeline inPipe = new Pipeline("inPipe");
+			inPipe.addMany(udpsrc, audiosink);
+			Element.linkMany(udpsrc, audiosink);
+
+		} else if (response.contains(CodeUtil.RequestTerminated)) {
+			System.out.println("Callee declined the call");
+		} else if (response.contains(CodeUtil.BusyHere)) {
+			System.out.println("Callee is busy");
+		} else {
+			System.out.println("Unable to call " + calleeURI + " - "
+					+ response.split(" ")[2]);
+		}
 	}
 
 	// establishes a VoIP connection with caller
@@ -219,61 +217,59 @@ public class SIPClient {
 		System.out.println("Receiving call from " + callerURI);
 
 		String response;
-		
-			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
-			out.flush();
-			
-			//response = in.readLine();
-			while (SERVER_THREAD_COMM.length() < 1) {
-				try{
-					Thread.sleep(50);
-				}
-				catch (InterruptedException e){} 
+
+		out.write("CODE " + callerURI + " " + CodeUtil.OK + " " + myIP + " "
+				+ myPort + "\n");
+		out.flush();
+
+		// response = in.readLine();
+		while (SERVER_THREAD_COMM.length() < 1) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
 			}
-			response = SERVER_THREAD_COMM;
-			SERVER_THREAD_COMM = "";
-			if (response.startsWith("ACK")) {
-				String[] banana = response.split(" ");
-				remoteIP = banana[2];
-				remotePort = Integer.valueOf(banana[3]);
+		}
+		response = SERVER_THREAD_COMM;
+		SERVER_THREAD_COMM = "";
+		if (response.startsWith("ACK")) {
+			String[] banana = response.split(" ");
+			remoteIP = banana[2];
+			remotePort = Integer.valueOf(banana[3]);
 
-				remoteListener = new RemoteListener(false);
-				remoteListener.run();
+			remoteListener = new RemoteListener(false);
+			remoteListener.start();
 
-				System.out.println("Direct connection now");
+			System.out.println("Direct connection now");
 
-				// TODO establish direct connection to remoteIP:remotePort
-				final Element alsasrc = ElementFactory
-						.make("alsascr", "source");
-				final Element rate = ElementFactory.make("audiorate", "rate");
-				final Element filter = ElementFactory.make("capsfilter",
-						"filter");
-				filter.setCaps(Caps
-						.fromString("audio/x-raw-int,rate=44100,channels=2"));
-				final Element udpsink = ElementFactory.make("udpsink", "sink");
+			// TODO establish direct connection to remoteIP:remotePort
+			final Element alsasrc = ElementFactory.make("alsasrc", "source");
+			final Element rate = ElementFactory.make("audiorate", "rate");
+			final Element filter = ElementFactory.make("capsfilter", "filter");
+			filter.setCaps(Caps
+					.fromString("audio/x-raw-int,rate=44100,channels=2"));
+			final Element udpsink = ElementFactory.make("udpsink", "sink");
 
-				udpsink.set("host", remoteIP);
-				udpsink.set("port", remotePort);
-				udpsink.set("auto-multicast", "true");
+			udpsink.set("host", remoteIP);
+			udpsink.set("port", remotePort);
+			udpsink.set("auto-multicast", "true");
 
-				Pipeline outPipe = new Pipeline("outPipe");
-				outPipe.addMany(alsasrc, rate, filter, udpsink);
-				Element.linkMany(alsasrc, rate, filter, udpsink);
+			Pipeline outPipe = new Pipeline("outPipe");
+			outPipe.addMany(alsasrc, rate, filter, udpsink);
+			Element.linkMany(alsasrc, rate, filter, udpsink);
 
-				final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-				final Element audiosink = ElementFactory.make("alsasink",
-						"sink");
-				udpsrc.set("address", remoteIP);
-				udpsrc.set("port", remotePort);
+			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			final Element audiosink = ElementFactory.make("alsasink", "sink");
+			udpsrc.set("address", remoteIP);
+			udpsrc.set("port", remotePort);
 
-				Pipeline inPipe = new Pipeline("inPipe");
-				inPipe.addMany(udpsrc, audiosink);
-				Element.linkMany(udpsrc, audiosink);
+			Pipeline inPipe = new Pipeline("inPipe");
+			inPipe.addMany(udpsrc, audiosink);
+			Element.linkMany(udpsrc, audiosink);
 
-			} else {
-				System.out.println("Error occured sending 200-OK - "
-						+ response.split(" ")[2]);
-			}
+		} else {
+			System.out.println("Error occured sending 200-OK - "
+					+ response.split(" ")[2]);
+		}
 	}
 
 	// decline current call
@@ -291,7 +287,8 @@ public class SIPClient {
 	// listens to messages coming from the sip server (invites)
 	private class ServerListener extends Thread {
 
-		public ServerListener() {}
+		public ServerListener() {
+		}
 
 		@Override
 		public void run() {
@@ -315,15 +312,15 @@ public class SIPClient {
 
 					gui.receivingCall(banana[1]);
 
-				}
-				else {
+				} else {
 					SERVER_THREAD_COMM = line;
 				}
 			}
 		}
 	}
 
-	// thread that starts a server on the caller side and a socket on the callee side
+	// thread that starts a server on the caller side and a socket on the callee
+	// side
 	// so they can send/receive the BYE signal
 	private class RemoteListener extends Thread {
 		protected boolean inCall = true;
@@ -337,8 +334,7 @@ public class SIPClient {
 				} catch (IOException E) {
 					System.out.println("Error establishing server socket!");
 				}
-			}
-			else {
+			} else {
 				try {
 					remote = new Socket(remoteIP, TCPPort);
 					remoteOut = new PrintWriter(remote.getOutputStream(), true);
@@ -411,16 +407,17 @@ public class SIPClient {
 					remote = localServerSocket.accept();
 					remote.setSoTimeout(500);
 					remoteOut = new PrintWriter(remote.getOutputStream(), true);
-					remoteIn = new BufferedReader(new InputStreamReader(remote.getInputStream()));
+					remoteIn = new BufferedReader(new InputStreamReader(
+							remote.getInputStream()));
 				} catch (IOException e) {
 					System.out.println("Error occured connecting to remote!");
 				}
 			}
-			
+
 			doCall();
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		new SIPClient();
 	}
