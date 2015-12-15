@@ -15,8 +15,8 @@ public class SIPClient {
 	// TODO handle hangup
 
 	// no spaces in URI!!
-	private final String myURI = "sip:Yoshi@mario.kart";
-	private final String myIP = "127.0.0.1";
+	private final String myURI = "sip:Peach@mario.kart";
+	private final String myIP = "130.240.158.252";
 	private final int myPort = 5060;
 	private final int TCPPort = 2345;
 	private String remoteIP;
@@ -254,7 +254,7 @@ public class SIPClient {
 				remoteIP = banana[2];
 				remotePort = Integer.valueOf(banana[3]);
 
-				remoteListener = new RemoteListener();
+				remoteListener = new RemoteListener(0);
 				remoteListener.run();
 
 				// restore server listener
@@ -349,7 +349,9 @@ public class SIPClient {
 	private class RemoteListener extends Thread {
 		protected boolean inCall = true;
 
-		public RemoteListener() {
+		public RemoteListener(){}
+		
+		public RemoteListener(int dummy) {
 			try {
 				remote = new Socket(remoteIP, TCPPort);
 				remoteOut = new PrintWriter(remote.getOutputStream(), true);
