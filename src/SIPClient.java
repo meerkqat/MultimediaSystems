@@ -306,7 +306,8 @@ public class SIPClient {
 
 	// disconnect from current call
 	public void closeCall() {
-		remoteListener.endCall();
+		if (remoteListener != null)
+			remoteListener.endCall();
 	}
 
 	// listens to messages coming from the sip server (invites)
