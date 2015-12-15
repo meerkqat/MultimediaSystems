@@ -190,8 +190,7 @@ public class SIPClient {
 
 			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
-			udpsrc.set("address", remoteIP);
-			udpsrc.set("port", remotePort);
+			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
@@ -260,8 +259,7 @@ public class SIPClient {
 
 			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
-			udpsrc.set("address", remoteIP);
-			udpsrc.set("port", remotePort);
+			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
