@@ -89,6 +89,7 @@ public class SIPClient {
 		if (server == null) return;
 		out.write("DISCONNECT "+myURI+"\n");
 		out.flush();
+		serverListener.interrupt();
 		try {
 			out.close();
 			in.close();
