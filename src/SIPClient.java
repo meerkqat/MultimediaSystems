@@ -42,13 +42,12 @@ public class SIPClient {
 	public SIPClient () {
 		gui = new AudioSIPGUI(this);
 		
-		// TODO init GUI
-		
-		
+		System.out.println("Running client "+myURI);
 	}
 	
 	// call from GUI when you enter the server IP
 	public void connectToServer(String host, int port) {
+		System.out.println("Connecting to SIP server");
 		try {
 			// open socket, reader, writer
 			server = new Socket(host, port);
@@ -82,6 +81,7 @@ public class SIPClient {
 			System.out.println("Error connecting to server!");
 			return;
 		}
+		System.out.println("Connected!");
 	}
 	
 	// disconnects from current server
@@ -110,6 +110,8 @@ public class SIPClient {
 	// caller should provide its IP & port as optional params appended to the ACK message
 	public void call(String calleeURI) {
 		myState = BUSY;
+		
+		System.out.println("Calling "+calleeURI);
 		
 		String response;
 		try {
@@ -149,6 +151,7 @@ public class SIPClient {
 					System.out.println("Error occured sending ACK - "+response.split(" ")[2]);
 					return;
 				}
+				System.out.println("Direct connection now");
 				
 				
 				// TODO establish direct connection to remoteIP:remotePort
@@ -177,6 +180,9 @@ public class SIPClient {
 	// caller should provide its IP & port as optional params appended to the ACK message
 	public void pickUp(String callerURI) {
 		myState = BUSY;
+		
+		System.out.println("Receiving call from "+callerURI);
+		
 		String response;
 		try {
 			serverListener.pause();
@@ -193,6 +199,8 @@ public class SIPClient {
 				
 				// restore server listener
 				serverListener.unpause();
+				
+				System.out.println("Direct connection now");
 				
 				
 				// TODO establish direct connection to remoteIP:remotePort
@@ -229,6 +237,7 @@ public class SIPClient {
 		public ServerListener() {}
 
 		public synchronized void pause(){
+			System.out.println("Pausing server listener");
 		    isPaused = true;
 		    while(isPaused) {
 				   try {
@@ -238,8 +247,9 @@ public class SIPClient {
 		}
 
 		public synchronized void unpause(){
-		   isPaused = false;
-		   notifyAll();
+			System.out.println("Unpausing server listener");
+			isPaused = false;
+			notifyAll();
 		}
 		
 		
@@ -253,6 +263,7 @@ public class SIPClient {
 				catch (IOException e) {
 					System.out.println("Error reading from server!");
 				}
+				System.out.println("Server sent: "+line);
 				
 				if (line.startsWith("INVITE")) {
 					String[] banana = line.split(" ");
@@ -261,9 +272,7 @@ public class SIPClient {
 						out.flush();
 						continue;
 					}
-					
-					
-					// TODO enable the pick up button or make a popup window or something call pickUp or declineCall
+
 					gui.receivingCall(banana[1]);
 					
 				}

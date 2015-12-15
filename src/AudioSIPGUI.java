@@ -7,6 +7,8 @@ import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -86,15 +88,7 @@ public class AudioSIPGUI {
 		public boolean dispatchKeyEvent(KeyEvent e){
 			if(e.getID() == KeyEvent.KEY_PRESSED){
 				if(e.getKeyCode() == KeyEvent.VK_S && ((e.getModifiers() &KeyEvent.CTRL_MASK )!=0)){
-	
-			        //Join Server
-			        String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
-					System.out.println("Join dialog retured "+address);
-					if (address != null && address.length() > 0) {
-						String[] banana=address.split(":");
-						client.connectToServer(banana[0],Integer.valueOf(banana[1]));
-						
-					}
+					joinServer();
 				}
 			}
 			return false;
@@ -102,7 +96,20 @@ public class AudioSIPGUI {
 		
 	};
 	
-
+	private void joinServer() {
+		if (client.getState() != client.PREINIT) {
+			client.disconnectFromServer();
+		}
+		
+		//Join Server
+        String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
+		System.out.println("Join dialog retured "+address);
+		if (address != null && address.length() > 0) {
+			String[] banana=address.split(":");
+			client.connectToServer(banana[0],Integer.valueOf(banana[1]));
+			
+		}
+	}
 	
 	public AudioSIPGUI(SIPClient c) {
     	client = c;
@@ -116,7 +123,14 @@ public class AudioSIPGUI {
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
                 frame.setMinimumSize(new Dimension(400,200)); 
                 frame.setLayout(new BorderLayout());
-                frame.setPreferredSize(new Dimension(400,300));                
+                frame.setPreferredSize(new Dimension(400,300));    
+                
+                frame.addWindowListener(new WindowAdapter() {
+            	    @Override
+            	    public void windowClosing(WindowEvent we) {
+            			client.disconnectFromServer();
+            	    }
+            	});
                 
                 KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                 kfm.addKeyEventDispatcher(keyboardListener);
@@ -148,13 +162,7 @@ public class AudioSIPGUI {
                 frame.getContentPane().add(connectionLabel,BorderLayout.CENTER);
                 frame.getContentPane().add(infoPanel,BorderLayout.EAST);
                 
-                //Join Server
-                String address = (String)JOptionPane.showInputDialog(frame, "Enter server address:\n","Server address", JOptionPane.PLAIN_MESSAGE,null, null,"");
-    			System.out.println("Join dialog retured "+address);
-    			if (address != null && address.length() > 0) {
-    				String[] banana=address.split(":");
-    				client.connectToServer(banana[0],Integer.valueOf(banana[1]));
-    			}
+                joinServer();
             } 
         }); 
         

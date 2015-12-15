@@ -23,6 +23,7 @@ public class SIPServer {
 			System.out.println("Error opening server socket!");
 		}
 		
+		System.out.println("Starting server");
 		while (true) {
 			try {
 				Socket s = servSoc.accept();
@@ -60,6 +61,7 @@ public class SIPServer {
 			catch (IOException e) {
 				System.out.println("Failed to open channel to socket");
 			}
+			System.out.println("Accepted client");
 		}
 		
 		// start listening to client -> get opcode + arguments (space separated)
