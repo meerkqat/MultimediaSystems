@@ -10,7 +10,7 @@ public class SIPClient {
 	// TODO handle hangup
 	
 	// no spaces in URI!!
-	private final String myURI = "sip:DonkeyKong@mario.kart";
+	private final String myURI = "sip:Yoshi@mario.kart";
 	private final String myIP = "127.0.0.1";
 	private final int myPort = 5060;
 	private final int TCPPort = 2345;
@@ -117,14 +117,19 @@ public class SIPClient {
 		String response;
 		try {
 			// pause server listener so it doesn't eat up our responses from the sever
-			serverListener.pause();
+			try {
+			serverListener.wait();
+			} catch (Exception e){}
 			
 			// invite ->
+			System.out.println("-----Start write------");
 			out.write("INVITE "+calleeURI+"\n");
 			out.flush();
+			System.out.println("-----End write------");
 			
 			// OK <-
 			response = in.readLine();
+			System.out.println("-----end listen------");
 			if (response.contains(CodeUtil.OK)) {
 				String[] banana = response.split(" ");
 				remoteIP = banana[3];
@@ -186,7 +191,10 @@ public class SIPClient {
 		
 		String response;
 		try {
-			serverListener.pause();
+			try {
+				serverListener.wait();
+			} catch (Exception e){}
+		
 			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
 			
 			response = in.readLine();

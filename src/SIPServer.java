@@ -76,12 +76,16 @@ public class SIPServer {
 				// read command
 				String line = "";
 				try { 
+					System.out.println("----Start listen----");
 					line = in.readLine();
+					System.out.println("----End listen----");
 				}
 				catch (IOException e) {
 					System.out.println("Error reading from socket!");
 					interrupt();
 				}
+				
+				System.out.println("Got: "+line);
 				
 				String[] banana = line.split(" ");
 				// register new client
@@ -105,6 +109,7 @@ public class SIPServer {
 				}
 				// bad opcode
 				else {
+					System.out.println("Sent bad event");
 					out.write("CODE "+banana[1]+" "+CodeUtil.BadEvent+"\n");
 					out.flush();
 				}
@@ -123,6 +128,8 @@ public class SIPServer {
 				response = "CODE "+id+" "+CodeUtil.OK+"\n";
 			}
 			
+			System.out.println("Sent: "+response);
+			
 			out.write(response);
 			out.flush();
 		}
@@ -135,6 +142,9 @@ public class SIPServer {
 			if (!clients.containsKey(id)) {
 				out.write("CODE "+id+" "+CodeUtil.NotFound+"\n");
 				out.flush();
+				
+				System.out.println("Sent not found");
+				
 				return;
 			}
 			
@@ -143,10 +153,15 @@ public class SIPServer {
 				PrintWriter pw = new PrintWriter(dest.getOutputStream(), true);
 				pw.write(msg);
 				pw.flush();
+				
+				System.out.println("Sent: "+msg);
 			}
 			catch (IOException e) {
 				System.out.println("Error opening out stream to destination!");
 				out.write("CODE "+id+" "+CodeUtil.Gone+"\n");
+				
+				System.out.println("Sent gone");
+				
 				out.flush();
 			}
 		}
