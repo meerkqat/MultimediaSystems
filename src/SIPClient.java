@@ -6,6 +6,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
+import org.gstreamer.Caps;
+import org.gstreamer.Element;
+import org.gstreamer.ElementFactory;
+import org.gstreamer.Pipeline;
+
 public class SIPClient {
 	// TODO handle hangup
 	
@@ -156,7 +161,23 @@ public class SIPClient {
 				
 				
 				// TODO establish direct connection to remoteIP:remotePort
+				Element alsasrc = ElementFactory.make("alsascr", "source");
+				Element rate = ElementFactory.make("audiorate", "rate");
+				Element filter = ElementFactory.make("capsfilter", "filter");
+				filter.setCaps(Caps.fromString("audio/x-raw-int,rate=44100,channels=2"));
+				final Element udpsink = ElementFactory.make("udpsink","sink");
 				
+				udpsink.set("host", remoteIP);
+			    udpsink.set("port", remotePort);
+			    udpsink.set("auto-multicast", "true");
+			    
+			    Pipeline  outPipe = new Pipeline("outPipe");
+			    outPipe.addMany(alsasrc, rate, filter, udpsink);
+			    Element.linkMany(alsasrc, rate, filter, udpsink);
+			    
+			    final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			    udpsrc.set("address", remoteIP);
+	    	    udpsrc.set("port", remotePort);
 				
 			}
 			else if (response.contains(CodeUtil.RequestTerminated)) {
