@@ -160,6 +160,7 @@ public class SIPServer {
 			catch (IOException e) {
 				System.out.println("Error opening out stream to destination!");
 				out.write("CODE "+id+" "+CodeUtil.Gone+"\n");
+				out.flush();
 				
 				System.out.println("Sent gone");
 				
