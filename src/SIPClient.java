@@ -43,6 +43,8 @@ public class SIPClient {
 	private RemoteListener remoteListener;
 
 	private AudioSIPGUI gui;
+	
+	private String SERVER_THREAD_COMM = "";
 
 	public SIPClient() {
 		gui = new AudioSIPGUI(this);
@@ -125,16 +127,26 @@ public class SIPClient {
 		System.out.println("Calling " + calleeURI);
 
 		String response;
-		try {
+			/*
 			// pause server listener so it doesn't eat up our responses from the sever
-			serverListener.suspend();
+			try {
+				serverListener.wait();
+			} catch (Exception e){}
+			*/
 			
 			// invite ->
 			out.write("INVITE " + calleeURI + "\n");
 			out.flush();
 
 			// OK <-
-			response = in.readLine();
+			while (SERVER_THREAD_COMM.length() < 1) {
+				try{
+					Thread.sleep(50);
+				}
+				catch (InterruptedException e){} 
+			}
+			response = SERVER_THREAD_COMM;
+			SERVER_THREAD_COMM = "";
 			if (response.contains(CodeUtil.OK)) {
 				String[] banana = response.split(" ");
 				remoteIP = banana[3];
@@ -148,16 +160,18 @@ public class SIPClient {
 				out.flush();
 
 				// error CODE <- ?
-				response = "";
-				server.setSoTimeout(millisToWaitForError);
-				try {
-					response = in.readLine();
-				} catch (SocketTimeoutException e) {
+				long now = System.currentTimeMillis();
+				while (SERVER_THREAD_COMM.length() < 1 && System.currentTimeMillis()-now < millisToWaitForError) {
+					try{
+						Thread.sleep(50);
+					}
+					catch (InterruptedException e){} 
 				}
-				server.setSoTimeout(0);
+				response = SERVER_THREAD_COMM;
+				SERVER_THREAD_COMM = "";
 
 				// restore server listener
-				serverListener.resume();
+				//serverListener.unpause();
 
 				if (response.length() > 0) {
 					System.out.println("Error occured sending ACK - "
@@ -202,11 +216,8 @@ public class SIPClient {
 				System.out.println("Unable to call " + calleeURI + " - "
 						+ response.split(" ")[2]);
 			}
-		} catch (IOException e) {
-			System.out.println("Error talking to server!");
-		}
 		// restore server listener if we haven't already
-		serverListener.resume();
+		//serverListener.unpause();
 	}
 
 	// establishes a VoIP connection with caller
@@ -220,13 +231,24 @@ public class SIPClient {
 		System.out.println("Receiving call from " + callerURI);
 
 		String response;
-		try {
-			serverListener.suspend();
+			/*
+			try {
+				serverListener.wait();
+			} catch (Exception e){}
+			*/
 		
 			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
 			out.flush();
 			
-			response = in.readLine();
+			//response = in.readLine();
+			while (SERVER_THREAD_COMM.length() < 1) {
+				try{
+					Thread.sleep(50);
+				}
+				catch (InterruptedException e){} 
+			}
+			response = SERVER_THREAD_COMM;
+			SERVER_THREAD_COMM = "";
 			if (response.startsWith("ACK")) {
 				String[] banana = response.split(" ");
 				remoteIP = banana[2];
@@ -236,7 +258,7 @@ public class SIPClient {
 				remoteListener.run();
 
 				// restore server listener
-				serverListener.resume();
+				//serverListener.unpause();
 
 				System.out.println("Direct connection now");
 
@@ -272,11 +294,8 @@ public class SIPClient {
 				System.out.println("Error occured sending 200-OK - "
 						+ response.split(" ")[2]);
 			}
-		} catch (IOException e) {
-			System.out.println("Error talking to server!");
-		}
 		// restore server listener if we haven't already
-		serverListener.resume();
+		//serverListener.unpause();
 	}
 
 	// decline current call
@@ -293,27 +312,7 @@ public class SIPClient {
 	// listens to messages coming from the sip server (invites)
 	private class ServerListener extends Thread {
 
-		private boolean isPaused = false;
-
-		public ServerListener() {
-		}
-
-		public synchronized void pause() {
-			System.out.println("Pausing server listener");
-			isPaused = true;
-			while (isPaused) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-				}
-			}
-		}
-
-		public synchronized void unpause() {
-			System.out.println("Unpausing server listener");
-			isPaused = false;
-			notifyAll();
-		}
+		public ServerListener() {}
 
 		@Override
 		public void run() {
@@ -337,9 +336,9 @@ public class SIPClient {
 
 					gui.receivingCall(banana[1]);
 
-				} else {
-					System.out.println("Unexpected message from server: "
-							+ line);
+				}
+				else {
+					SERVER_THREAD_COMM = line;
 				}
 			}
 		}
