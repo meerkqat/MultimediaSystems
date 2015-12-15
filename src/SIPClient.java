@@ -9,6 +9,7 @@ import java.net.SocketTimeoutException;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
+import org.gstreamer.Gst;
 import org.gstreamer.Pipeline;
 
 public class SIPClient {
@@ -419,6 +420,8 @@ public class SIPClient {
 	}
 
 	public static void main(String[] args) {
+		args = Gst.init("SwingVideoTest", args);
 		new SIPClient();
+		Gst.main();
 	}
 }
