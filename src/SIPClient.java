@@ -126,14 +126,7 @@ public class SIPClient {
 
 		System.out.println("Calling " + calleeURI);
 
-		String response;
-			/*
-			// pause server listener so it doesn't eat up our responses from the sever
-			try {
-				serverListener.wait();
-			} catch (Exception e){}
-			*/
-			
+		String response;			
 			// invite ->
 			out.write("INVITE " + calleeURI + "\n");
 			out.flush();
@@ -152,7 +145,7 @@ public class SIPClient {
 				remoteIP = banana[3];
 				remotePort = Integer.valueOf(banana[4]);
 
-				remoteListener = new LocalServer();
+				remoteListener = new RemoteListener(true);
 				remoteListener.run();
 
 				// ACK ->
@@ -169,9 +162,6 @@ public class SIPClient {
 				}
 				response = SERVER_THREAD_COMM;
 				SERVER_THREAD_COMM = "";
-
-				// restore server listener
-				//serverListener.unpause();
 
 				if (response.length() > 0) {
 					System.out.println("Error occured sending ACK - "
@@ -216,8 +206,6 @@ public class SIPClient {
 				System.out.println("Unable to call " + calleeURI + " - "
 						+ response.split(" ")[2]);
 			}
-		// restore server listener if we haven't already
-		//serverListener.unpause();
 	}
 
 	// establishes a VoIP connection with caller
@@ -231,11 +219,6 @@ public class SIPClient {
 		System.out.println("Receiving call from " + callerURI);
 
 		String response;
-			/*
-			try {
-				serverListener.wait();
-			} catch (Exception e){}
-			*/
 		
 			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
 			out.flush();
@@ -254,11 +237,8 @@ public class SIPClient {
 				remoteIP = banana[2];
 				remotePort = Integer.valueOf(banana[3]);
 
-				remoteListener = new RemoteListener(0);
+				remoteListener = new RemoteListener(false);
 				remoteListener.run();
-
-				// restore server listener
-				//serverListener.unpause();
 
 				System.out.println("Direct connection now");
 
@@ -294,8 +274,6 @@ public class SIPClient {
 				System.out.println("Error occured sending 200-OK - "
 						+ response.split(" ")[2]);
 			}
-		// restore server listener if we haven't already
-		//serverListener.unpause();
 	}
 
 	// decline current call
@@ -345,21 +323,30 @@ public class SIPClient {
 		}
 	}
 
-	// thread that connects to the caller via a Socket to be able to
-	// send/receive the BYE signal
+	// thread that starts a server on the caller side and a socket on the callee side
+	// so they can send/receive the BYE signal
 	private class RemoteListener extends Thread {
 		protected boolean inCall = true;
+		private boolean isServer;
 
-		public RemoteListener(){}
-		
-		public RemoteListener(int dummy) {
-			try {
-				remote = new Socket(remoteIP, TCPPort);
-				remoteOut = new PrintWriter(remote.getOutputStream(), true);
-				remoteIn = new BufferedReader(new InputStreamReader(
-						remote.getInputStream()));
-			} catch (IOException e) {
-				System.out.println("Could not open connection to remote!");
+		public RemoteListener(boolean isServer) {
+			this.isServer = isServer;
+			if (isServer) {
+				try {
+					localServerSocket = new ServerSocket(TCPPort);
+				} catch (IOException E) {
+					System.out.println("Error establishing server socket!");
+				}
+			}
+			else {
+				try {
+					remote = new Socket(remoteIP, TCPPort);
+					remoteOut = new PrintWriter(remote.getOutputStream(), true);
+					remoteIn = new BufferedReader(new InputStreamReader(
+							remote.getInputStream()));
+				} catch (IOException e) {
+					System.out.println("Could not open connection to remote!");
+				}
 			}
 		}
 
@@ -418,40 +405,22 @@ public class SIPClient {
 
 		@Override
 		public void run() {
+			if (isServer) {
+				try {
+					// open connection
+					remote = localServerSocket.accept();
+					remote.setSoTimeout(500);
+					remoteOut = new PrintWriter(remote.getOutputStream(), true);
+					remoteIn = new BufferedReader(new InputStreamReader(remote.getInputStream()));
+				} catch (IOException e) {
+					System.out.println("Error occured connecting to remote!");
+				}
+			}
+			
 			doCall();
 		}
 	}
-
-	// a thread that runs a local server when making a call - used to
-	// send/receive BYE signal
-	private class LocalServer extends RemoteListener {
-
-		// init server socket
-		public LocalServer() {
-			try {
-				localServerSocket = new ServerSocket(TCPPort);
-			} catch (IOException E) {
-				System.out.println("Error establishing server socket!");
-			}
-		}
-
-		@Override
-		public void run() {
-			try {
-				// open connection
-				remote = localServerSocket.accept();
-				remote.setSoTimeout(500);
-				remoteOut = new PrintWriter(remote.getOutputStream(), true);
-				remoteIn = new BufferedReader(new InputStreamReader(
-						remote.getInputStream()));
-
-				doCall();
-			} catch (IOException e) {
-				System.out.println("Error occured connecting to remote!");
-			}
-		}
-	}
-
+	
 	public static void main(String[] args) {
 		new SIPClient();
 	}
