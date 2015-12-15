@@ -94,8 +94,8 @@ public class SIPServer {
 				}
 				// forward message to destination, swap receiver for sender
 				else if (banana[0].equals("INVITE") || banana[0].equals("CODE") || banana[0].equals("ACK")) {
-					String sendTo = getIdFromSocket(client);
-					banana[1] = sendTo;
+					String sendTo = banana[1];
+					banana[1] = getIdFromSocket(client);
 					forward(sendTo, join(banana, " ")+"\n");
 				}
 				// client requested disconnect

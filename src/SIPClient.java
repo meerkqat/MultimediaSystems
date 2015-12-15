@@ -122,14 +122,11 @@ public class SIPClient {
 			} catch (Exception e){}
 			
 			// invite ->
-			System.out.println("-----Start write------");
 			out.write("INVITE "+calleeURI+"\n");
 			out.flush();
-			System.out.println("-----End write------");
 			
 			// OK <-
 			response = in.readLine();
-			System.out.println("-----end listen------");
 			if (response.contains(CodeUtil.OK)) {
 				String[] banana = response.split(" ");
 				remoteIP = banana[3];
@@ -196,6 +193,7 @@ public class SIPClient {
 			} catch (Exception e){}
 		
 			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
+			out.flush();
 			
 			response = in.readLine();
 			if (response.startsWith("ACK")) {
