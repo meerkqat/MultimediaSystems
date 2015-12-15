@@ -127,9 +127,7 @@ public class SIPClient {
 		String response;
 		try {
 			// pause server listener so it doesn't eat up our responses from the sever
-			try {
-				serverListener.wait();
-			} catch (Exception e){}
+			serverListener.suspend();
 			
 			// invite ->
 			out.write("INVITE " + calleeURI + "\n");
@@ -159,7 +157,7 @@ public class SIPClient {
 				server.setSoTimeout(0);
 
 				// restore server listener
-				serverListener.unpause();
+				serverListener.resume();
 
 				if (response.length() > 0) {
 					System.out.println("Error occured sending ACK - "
@@ -208,7 +206,7 @@ public class SIPClient {
 			System.out.println("Error talking to server!");
 		}
 		// restore server listener if we haven't already
-		serverListener.unpause();
+		serverListener.resume();
 	}
 
 	// establishes a VoIP connection with caller
@@ -223,9 +221,7 @@ public class SIPClient {
 
 		String response;
 		try {
-			try {
-				serverListener.wait();
-			} catch (Exception e){}
+			serverListener.suspend();
 		
 			out.write("CODE "+callerURI+" "+CodeUtil.OK+" "+myIP+" "+myPort+"\n");
 			out.flush();
@@ -240,7 +236,7 @@ public class SIPClient {
 				remoteListener.run();
 
 				// restore server listener
-				serverListener.unpause();
+				serverListener.resume();
 
 				System.out.println("Direct connection now");
 
@@ -280,7 +276,7 @@ public class SIPClient {
 			System.out.println("Error talking to server!");
 		}
 		// restore server listener if we haven't already
-		serverListener.unpause();
+		serverListener.resume();
 	}
 
 	// decline current call
