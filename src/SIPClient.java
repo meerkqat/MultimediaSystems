@@ -16,10 +16,10 @@ public class SIPClient {
 	// TODO handle hangup
 
 	// no spaces in URI!!
-	private final String myURI = "sip:Peach@mario.kart";
-	private final String myIP = "130.240.157.150";
+	private final String myURI = "sip:Bowser@mario.kart";
+	private final String myIP = "127.0.0.1";
 	private final int myPort = 5060;
-	private final int TCPPort = 2345;
+	private final int TCPPort = 2346;
 	private String remoteIP;
 	private int remotePort;
 
@@ -171,6 +171,7 @@ public class SIPClient {
 				return;
 			}
 			System.out.println("Direct connection now");
+/**/
 
 			// TODO establish direct connection to remoteIP:remotePort
 			final Element alsasrc = ElementFactory.make("alsasrc", "source");
@@ -195,13 +196,14 @@ public class SIPClient {
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-
+/**/
 		} else if (response.contains(CodeUtil.RequestTerminated)) {
 			System.out.println("Callee declined the call");
 		} else if (response.contains(CodeUtil.BusyHere)) {
 			System.out.println("Callee is busy");
 		} else {
 			System.out.println("Unable to call " + calleeURI + " - "
+			
 					+ response.split(" ")[2]);
 		}
 	}
@@ -240,7 +242,7 @@ public class SIPClient {
 			remoteListener.start();
 
 			System.out.println("Direct connection now");
-
+/**/
 			// TODO establish direct connection to remoteIP:remotePort
 			final Element alsasrc = ElementFactory.make("alsasrc", "source");
 			final Element rate = ElementFactory.make("audiorate", "rate");
@@ -264,7 +266,7 @@ public class SIPClient {
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-
+/**/
 		} else {
 			System.out.println("Error occured sending 200-OK - "
 					+ response.split(" ")[2]);
@@ -369,12 +371,12 @@ public class SIPClient {
 						remoteOut.write("CODE " + CodeUtil.OK + "\n");
 						remoteOut.flush();
 
-						remoteIn.close();
-						remoteOut.close();
-						remote.close();
-						localServerSocket.close();
+							remoteIn.close();
+							remoteOut.close();
+							remote.close();
+							if (isServer) localServerSocket.close();
 						inCall = false;
-					} else {
+					} else if (msg.length() > 0){
 						System.out.println("Unexpected message from remote: "
 								+ msg);
 					}
