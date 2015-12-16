@@ -16,10 +16,10 @@ public class SIPClient {
 	// TODO handle hangup
 
 	// no spaces in URI!!
-	private final String myURI = "sip:Bowser@mario.kart";
+	public final String myURI = "sip:Peach@mario.kart";
 	private final String myIP = "127.0.0.1";
 	private final int myPort = 5060;
-	private final int TCPPort = 2346;
+	private final int TCPPort = 2345;
 	private String remoteIP;
 	private int remotePort;
 
@@ -29,6 +29,7 @@ public class SIPClient {
 
 	private int myState = PREINIT;
 
+	private final int millisRemoteTimeout= 500;
 	private final int millisToWaitForError = 2000;
 
 	private Socket server;
@@ -199,12 +200,13 @@ public class SIPClient {
 /**/
 		} else if (response.contains(CodeUtil.RequestTerminated)) {
 			System.out.println("Callee declined the call");
+			gui.disconnectEvent();
 		} else if (response.contains(CodeUtil.BusyHere)) {
 			System.out.println("Callee is busy");
+			gui.disconnectEvent();
 		} else {
-			System.out.println("Unable to call " + calleeURI + " - "
-			
-					+ response.split(" ")[2]);
+			System.out.println("Unable to call " + calleeURI + " - " + response.split(" ")[2]);
+			gui.disconnectEvent();
 		}
 	}
 
@@ -220,8 +222,7 @@ public class SIPClient {
 
 		String response;
 
-		out.write("CODE " + callerURI + " " + CodeUtil.OK + " " + myIP + " "
-				+ myPort + "\n");
+		out.write("CODE " + callerURI + " " + CodeUtil.OK + " " + myIP + " " + myPort + "\n");
 		out.flush();
 
 		// response = in.readLine();
@@ -268,8 +269,7 @@ public class SIPClient {
 			Element.linkMany(udpsrc, audiosink);
 /**/
 		} else {
-			System.out.println("Error occured sending 200-OK - "
-					+ response.split(" ")[2]);
+			System.out.println("Error occured sending 200-OK - " + response.split(" ")[2]);
 		}
 	}
 
@@ -345,6 +345,7 @@ public class SIPClient {
 			} else {
 				try {
 					remote = new Socket(remoteIP, TCPPort);
+					remote.setSoTimeout(millisRemoteTimeout);
 					remoteOut = new PrintWriter(remote.getOutputStream(), true);
 					remoteIn = new BufferedReader(new InputStreamReader(
 							remote.getInputStream()));
@@ -355,6 +356,7 @@ public class SIPClient {
 		}
 
 		public void endCall() {
+			System.out.println("call ending");
 			inCall = false;
 		}
 
@@ -368,13 +370,16 @@ public class SIPClient {
 					} catch (SocketTimeoutException e) {
 					}
 					if (msg.startsWith("BYE")) {
+						System.out.println("got bye");
+						
 						remoteOut.write("CODE " + CodeUtil.OK + "\n");
 						remoteOut.flush();
 
-							remoteIn.close();
-							remoteOut.close();
-							remote.close();
-							if (isServer) localServerSocket.close();
+						remoteIn.close();
+						remoteOut.close();
+						remote.close();
+						if (isServer) localServerSocket.close();
+						
 						inCall = false;
 					} else if (msg.length() > 0){
 						System.out.println("Unexpected message from remote: "
@@ -384,7 +389,9 @@ public class SIPClient {
 
 				// we broke out of the while, but didn't get a BYE message,
 				// therefore we must be ending the call
+				System.out.println("outside");
 				if (!remote.isClosed()) {
+					System.out.println("didn't get bye");
 					remoteOut.write("BYE\n");
 					remoteOut.flush();
 					remote.setSoTimeout(0);
@@ -394,13 +401,17 @@ public class SIPClient {
 						remoteIn.close();
 						remoteOut.close();
 						remote.close();
-						localServerSocket.close();
+						if (isServer) localServerSocket.close();
 					} else {
 						System.out.println("Unexpected message from remote: "
 								+ msg);
 					}
 				}
+				
+				System.out.println("Call ended");
 
+				gui.disconnectEvent();
+				
 				myState = FREE;
 			} catch (IOException e) {
 				System.out.println("Error occured talking to remote!");
@@ -413,7 +424,7 @@ public class SIPClient {
 				try {
 					// open connection
 					remote = localServerSocket.accept();
-					remote.setSoTimeout(500);
+					remote.setSoTimeout(millisRemoteTimeout);
 					remoteOut = new PrintWriter(remote.getOutputStream(), true);
 					remoteIn = new BufferedReader(new InputStreamReader(
 							remote.getInputStream()));
