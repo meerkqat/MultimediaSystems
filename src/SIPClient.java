@@ -309,8 +309,15 @@ public class SIPClient {
 						continue;
 					}
 
-					gui.receivingCall(banana[1]);
-
+					final String callee = banana[1];
+					Thread incoming = new Thread() {
+						@Override
+						public void run() {
+							gui.receivingCall(callee);
+						}
+					};
+					incoming.start();
+					
 				} else {
 					SERVER_THREAD_COMM = line;
 				}
