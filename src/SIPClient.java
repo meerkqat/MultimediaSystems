@@ -48,6 +48,9 @@ public class SIPClient {
 
 	private String SERVER_THREAD_COMM = "";
 
+	private Pipeline inPipe;
+	private Pipeline outPipe;
+
 	public SIPClient() {
 		gui = new AudioSIPGUI(this);
 
@@ -187,7 +190,7 @@ public class SIPClient {
 			udpsink.set("auto-multicast", "true");
 			System.out.println("IP" + remoteIP);
 			System.out.println("Port" + remotePort);
-			Pipeline outPipe = new Pipeline("outPipe");
+			outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
 
@@ -197,10 +200,10 @@ public class SIPClient {
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
 			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
-			Pipeline inPipe = new Pipeline("inPipe");
+			inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-			
+
 			outPipe.play();
 			inPipe.play();
 			/**/
@@ -265,7 +268,7 @@ public class SIPClient {
 			udpsink.set("auto-multicast", "true");
 			System.out.println("Ip " + remoteIP);
 			System.out.println("Port " + remotePort);
-			Pipeline outPipe = new Pipeline("outPipe");
+			outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
 
@@ -275,10 +278,10 @@ public class SIPClient {
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
 			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
-			Pipeline inPipe = new Pipeline("inPipe");
+			inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-			
+
 			outPipe.play();
 			inPipe.play();
 			/**/
@@ -296,8 +299,11 @@ public class SIPClient {
 
 	// disconnect from current call
 	public void closeCall() {
-		if (remoteListener != null)
+		if (remoteListener != null) {
+			inPipe.stop();
+			outPipe.stop();
 			remoteListener.endCall();
+		}
 	}
 
 	// listens to messages coming from the sip server (invites)
