@@ -416,7 +416,14 @@ public class SIPClient {
 						msg = remoteIn.readLine();
 					} catch (SocketTimeoutException e) {
 					}
-					if (msg.startsWith("BYE")) {
+					// msg == null is hangup on other side
+					if (msg == null) {
+						System.out.println("Hangup");
+						inPipe.stop();
+						outPipe.stop();
+						inCall = false;
+					}
+					else if (msg.startsWith("BYE")) {
 						System.out.println("got bye");
 						inPipe.stop();
 						outPipe.stop();
@@ -430,7 +437,8 @@ public class SIPClient {
 							localServerSocket.close();
 
 						inCall = false;
-					} else if (msg.length() > 0) {
+					} 
+					else if (msg.length() > 0) {
 						System.out.println("Unexpected message from remote: "
 								+ msg);
 					}
@@ -447,7 +455,7 @@ public class SIPClient {
 					msg = remoteIn.readLine();
 					inPipe.stop();
 					outPipe.stop();
-					if (msg.contains(CodeUtil.OK)) {
+					if (msg == null || msg.contains(CodeUtil.OK)) {
 						remoteIn.close();
 						remoteOut.close();
 						remote.close();
