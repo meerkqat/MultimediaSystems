@@ -188,8 +188,7 @@ public class SIPClient {
 			udpsink.set("host", remoteIP);
 			udpsink.set("port", remotePort);
 			udpsink.set("auto-multicast", "true");
-			System.out.println("IP" + remoteIP);
-			System.out.println("Port" + remotePort);
+
 			outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
@@ -266,8 +265,7 @@ public class SIPClient {
 			udpsink.set("host", remoteIP);
 			udpsink.set("port", remotePort);
 			udpsink.set("auto-multicast", "true");
-			System.out.println("Ip " + remoteIP);
-			System.out.println("Port " + remotePort);
+
 			outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
@@ -392,7 +390,8 @@ public class SIPClient {
 					}
 					if (msg.startsWith("BYE")) {
 						System.out.println("got bye");
-
+						inPipe.stop();
+						outPipe.stop();
 						remoteOut.write("CODE " + CodeUtil.OK + "\n");
 						remoteOut.flush();
 
@@ -418,7 +417,8 @@ public class SIPClient {
 					remoteOut.flush();
 					remote.setSoTimeout(0);
 					msg = remoteIn.readLine();
-
+					inPipe.stop();
+					outPipe.stop();
 					if (msg.contains(CodeUtil.OK)) {
 						remoteIn.close();
 						remoteOut.close();
