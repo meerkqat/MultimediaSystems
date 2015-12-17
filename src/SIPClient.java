@@ -209,9 +209,9 @@ public class SIPClient {
 			inPipe = new Pipeline("inPipe");
 			inPipe = inPipe
 					.launch("udpsrc uri=udp://"
-							+ remoteIP
+							+ myIP
 							+ ":"
-							+ remotePort
+							+ myPort
 							+ " ! audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2 ! alsasink");
 			inPipe.setName("inPipe");
 			// inPipe.addMany(udpsrc, audiosink);
@@ -300,9 +300,9 @@ public class SIPClient {
 			inPipe = new Pipeline("inPipe");
 			inPipe = inPipe
 					.launch("udpsrc uri=udp://"
-							+ remoteIP
+							+ myIP
 							+ ":"
-							+ remotePort
+							+ myPort
 							+ " ! audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2 ! alsasink");
 			inPipe.setName("inPipe");
 			// inPipe.addMany(udpsrc, audiosink);
