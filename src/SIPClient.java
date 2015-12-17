@@ -16,8 +16,8 @@ public class SIPClient {
 	// TODO handle hangup
 
 	// no spaces in URI!!
-	public final String myURI = "sip:Peach@mario.kart";
-	private final String myIP = "130.240.157.150";
+	public final String myURI = "sip:Yoshi@mario.kart";
+	private final String myIP = "130.240.157.65";
 	private final int myPort = 5060;
 	private final int TCPPort = 2345;
 	private String remoteIP;
