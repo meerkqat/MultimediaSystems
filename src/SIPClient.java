@@ -17,7 +17,7 @@ public class SIPClient {
 
 	// no spaces in URI!!
 	public final String myURI = "sip:Peach@mario.kart";
-	private final String myIP = "127.0.0.1";
+	private final String myIP = "130.240.157.150";
 	private final int myPort = 5060;
 	private final int TCPPort = 2345;
 	private String remoteIP;
@@ -179,13 +179,14 @@ public class SIPClient {
 			final Element rate = ElementFactory.make("audiorate", "rate");
 			final Element filter = ElementFactory.make("capsfilter", "filter");
 			filter.setCaps(Caps
-					.fromString("audio/x-raw-int,rate=44100,channels=2"));
+					.fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
 			final Element udpsink = ElementFactory.make("udpsink", "sink");
 
 			udpsink.set("host", remoteIP);
 			udpsink.set("port", remotePort);
 			udpsink.set("auto-multicast", "true");
-
+			System.out.println("IP" + remoteIP);
+			System.out.println("Port" + remotePort);
 			Pipeline outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
@@ -199,6 +200,9 @@ public class SIPClient {
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
+			
+			outPipe.play();
+			inPipe.play();
 			/**/
 		} else if (response.contains(CodeUtil.RequestTerminated)) {
 			System.out.println("Callee declined the call");
@@ -253,13 +257,14 @@ public class SIPClient {
 			final Element rate = ElementFactory.make("audiorate", "rate");
 			final Element filter = ElementFactory.make("capsfilter", "filter");
 			filter.setCaps(Caps
-					.fromString("audio/x-raw-int,rate=44100,channels=2"));
+					.fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
 			final Element udpsink = ElementFactory.make("udpsink", "sink");
 
 			udpsink.set("host", remoteIP);
 			udpsink.set("port", remotePort);
 			udpsink.set("auto-multicast", "true");
-
+			System.out.println("Ip " + remoteIP);
+			System.out.println("Port " + remotePort);
 			Pipeline outPipe = new Pipeline("outPipe");
 			outPipe.addMany(alsasrc, rate, filter, udpsink);
 			Element.linkMany(alsasrc, rate, filter, udpsink);
@@ -273,6 +278,9 @@ public class SIPClient {
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
+			
+			outPipe.play();
+			inPipe.play();
 			/**/
 		} else {
 			System.out.println("Error occured sending 200-OK - "
