@@ -29,7 +29,7 @@ public class SIPClient {
 
 	private int myState = PREINIT;
 
-	private final int millisRemoteTimeout= 500;
+	private final int millisRemoteTimeout = 500;
 	private final int millisToWaitForError = 2000;
 
 	private Socket server;
@@ -172,7 +172,7 @@ public class SIPClient {
 				return;
 			}
 			System.out.println("Direct connection now");
-/**/
+			/**/
 
 			// TODO establish direct connection to remoteIP:remotePort
 			final Element alsasrc = ElementFactory.make("alsasrc", "source");
@@ -191,13 +191,15 @@ public class SIPClient {
 			Element.linkMany(alsasrc, rate, filter, udpsink);
 
 			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			udpsrc.setCaps(Caps
+					.fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
 			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-/**/
+			/**/
 		} else if (response.contains(CodeUtil.RequestTerminated)) {
 			System.out.println("Callee declined the call");
 			gui.disconnectEvent();
@@ -205,7 +207,8 @@ public class SIPClient {
 			System.out.println("Callee is busy");
 			gui.disconnectEvent();
 		} else {
-			System.out.println("Unable to call " + calleeURI + " - " + response.split(" ")[2]);
+			System.out.println("Unable to call " + calleeURI + " - "
+					+ response.split(" ")[2]);
 			gui.disconnectEvent();
 		}
 	}
@@ -222,7 +225,8 @@ public class SIPClient {
 
 		String response;
 
-		out.write("CODE " + callerURI + " " + CodeUtil.OK + " " + myIP + " " + myPort + "\n");
+		out.write("CODE " + callerURI + " " + CodeUtil.OK + " " + myIP + " "
+				+ myPort + "\n");
 		out.flush();
 
 		// response = in.readLine();
@@ -243,7 +247,7 @@ public class SIPClient {
 			remoteListener.start();
 
 			System.out.println("Direct connection now");
-/**/
+			/**/
 			// TODO establish direct connection to remoteIP:remotePort
 			final Element alsasrc = ElementFactory.make("alsasrc", "source");
 			final Element rate = ElementFactory.make("audiorate", "rate");
@@ -261,15 +265,18 @@ public class SIPClient {
 			Element.linkMany(alsasrc, rate, filter, udpsink);
 
 			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			udpsrc.setCaps(Caps
+					.fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
 			final Element audiosink = ElementFactory.make("alsasink", "sink");
 			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
 
 			Pipeline inPipe = new Pipeline("inPipe");
 			inPipe.addMany(udpsrc, audiosink);
 			Element.linkMany(udpsrc, audiosink);
-/**/
+			/**/
 		} else {
-			System.out.println("Error occured sending 200-OK - " + response.split(" ")[2]);
+			System.out.println("Error occured sending 200-OK - "
+					+ response.split(" ")[2]);
 		}
 	}
 
@@ -319,7 +326,7 @@ public class SIPClient {
 						}
 					};
 					incoming.start();
-					
+
 				} else {
 					SERVER_THREAD_COMM = line;
 				}
@@ -371,17 +378,18 @@ public class SIPClient {
 					}
 					if (msg.startsWith("BYE")) {
 						System.out.println("got bye");
-						
+
 						remoteOut.write("CODE " + CodeUtil.OK + "\n");
 						remoteOut.flush();
 
 						remoteIn.close();
 						remoteOut.close();
 						remote.close();
-						if (isServer) localServerSocket.close();
-						
+						if (isServer)
+							localServerSocket.close();
+
 						inCall = false;
-					} else if (msg.length() > 0){
+					} else if (msg.length() > 0) {
 						System.out.println("Unexpected message from remote: "
 								+ msg);
 					}
@@ -401,17 +409,18 @@ public class SIPClient {
 						remoteIn.close();
 						remoteOut.close();
 						remote.close();
-						if (isServer) localServerSocket.close();
+						if (isServer)
+							localServerSocket.close();
 					} else {
 						System.out.println("Unexpected message from remote: "
 								+ msg);
 					}
 				}
-				
+
 				System.out.println("Call ended");
 
 				gui.disconnectEvent();
-				
+
 				myState = FREE;
 			} catch (IOException e) {
 				System.out.println("Error occured talking to remote!");
