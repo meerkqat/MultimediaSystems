@@ -126,6 +126,7 @@ public class SIPClient {
 	// 200-OK message
 	// caller should provide its IP & port as optional params appended to the
 	// ACK message
+	@SuppressWarnings("static-access")
 	public void call(String calleeURI) {
 		myState = BUSY;
 
@@ -178,30 +179,43 @@ public class SIPClient {
 			/**/
 
 			// TODO establish direct connection to remoteIP:remotePort
-			final Element alsasrc = ElementFactory.make("alsasrc", "source");
-			final Element rate = ElementFactory.make("audiorate", "rate");
-			final Element filter = ElementFactory.make("capsfilter", "filter");
-			filter.setCaps(Caps
-					.fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
-			final Element udpsink = ElementFactory.make("udpsink", "sink");
-
-			udpsink.set("host", remoteIP);
-			udpsink.set("port", remotePort);
-			udpsink.set("auto-multicast", "true");
-
+			// final Element alsasrc = ElementFactory.make("alsasrc", "source");
+			// final Element rate = ElementFactory.make("audiorate", "rate");
+			// final Element filter = ElementFactory.make("capsfilter",
+			// "filter");
+			// filter.setCaps(Caps
+			// .fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
+			// final Element udpsink = ElementFactory.make("udpsink", "sink");
+			//
+			// udpsink.set("host", remoteIP);
+			// udpsink.set("port", remotePort);
+			// udpsink.set("auto-multicast", "true");
+			//
 			outPipe = new Pipeline("outPipe");
-			outPipe.addMany(alsasrc, rate, filter, udpsink);
-			Element.linkMany(alsasrc, rate, filter, udpsink);
+			outPipe = outPipe
+					.launch("alsasrc ! audio/x-raw-int, rate=44100, channels=2 ! udpsink host="
+							+ remoteIP + " port=" + remotePort);
+			outPipe.setName("outPipe");
+			// outPipe.addMany(alsasrc, rate, filter, udpsink);
+			// Element.linkMany(alsasrc, rate, filter, udpsink);
 
-			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-			udpsrc.setCaps(Caps
-					.fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
-			final Element audiosink = ElementFactory.make("alsasink", "sink");
-			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
-
+			// final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			// udpsrc.setCaps(Caps
+			// .fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
+			// final Element audiosink = ElementFactory.make("alsasink",
+			// "sink");
+			// udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
+			//
 			inPipe = new Pipeline("inPipe");
-			inPipe.addMany(udpsrc, audiosink);
-			Element.linkMany(udpsrc, audiosink);
+			inPipe = inPipe
+					.launch("udpsrc uri=udp://"
+							+ remoteIP
+							+ ":"
+							+ remotePort
+							+ " ! audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2 ! alsasink");
+			inPipe.setName("inPipe");
+			// inPipe.addMany(udpsrc, audiosink);
+			// Element.linkMany(udpsrc, audiosink);
 
 			outPipe.play();
 			inPipe.play();
@@ -224,6 +238,7 @@ public class SIPClient {
 	// 200-OK message
 	// caller should provide its IP & port as optional params appended to the
 	// ACK message
+	@SuppressWarnings("static-access")
 	public void pickUp(String callerURI) {
 		myState = BUSY;
 
@@ -255,30 +270,43 @@ public class SIPClient {
 			System.out.println("Direct connection now");
 			/**/
 			// TODO establish direct connection to remoteIP:remotePort
-			final Element alsasrc = ElementFactory.make("alsasrc", "source");
-			final Element rate = ElementFactory.make("audiorate", "rate");
-			final Element filter = ElementFactory.make("capsfilter", "filter");
-			filter.setCaps(Caps
-					.fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
-			final Element udpsink = ElementFactory.make("udpsink", "sink");
-
-			udpsink.set("host", remoteIP);
-			udpsink.set("port", remotePort);
-			udpsink.set("auto-multicast", "true");
+			// final Element alsasrc = ElementFactory.make("alsasrc", "source");
+			// final Element rate = ElementFactory.make("audiorate", "rate");
+			// final Element filter = ElementFactory.make("capsfilter",
+			// "filter");
+			// filter.setCaps(Caps
+			// .fromString("audio/x-raw-int,endianness=1234, signed=true, width=32, depth=32, rate=44100,channels=2"));
+			// final Element udpsink = ElementFactory.make("udpsink", "sink");
+			//
+			// udpsink.set("host", remoteIP);
+			// udpsink.set("port", remotePort);
+			// udpsink.set("auto-multicast", "true");
 
 			outPipe = new Pipeline("outPipe");
-			outPipe.addMany(alsasrc, rate, filter, udpsink);
-			Element.linkMany(alsasrc, rate, filter, udpsink);
+			outPipe = outPipe
+					.launch("alsasrc ! audio/x-raw-int, rate=44100, channels=2 ! udpsink host="
+							+ remoteIP + " port=" + remotePort);
+			outPipe.setName("outPipe");
+			// outPipe.addMany(alsasrc, rate, filter, udpsink);
+			// Element.linkMany(alsasrc, rate, filter, udpsink);
 
-			final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
-			udpsrc.setCaps(Caps
-					.fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
-			final Element audiosink = ElementFactory.make("alsasink", "sink");
-			udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
-
+			// final Element udpsrc = ElementFactory.make("udpsrc", "udpsrc");
+			// udpsrc.setCaps(Caps
+			// .fromString("audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2"));
+			// final Element audiosink = ElementFactory.make("alsasink",
+			// "sink");
+			// udpsrc.set("uri", "udp://" + remoteIP + ":" + remotePort);
+			//
 			inPipe = new Pipeline("inPipe");
-			inPipe.addMany(udpsrc, audiosink);
-			Element.linkMany(udpsrc, audiosink);
+			inPipe = inPipe
+					.launch("udpsrc uri=udp://"
+							+ remoteIP
+							+ ":"
+							+ remotePort
+							+ " ! audio/x-raw-int, endianness=1234, signed=true, width=32, depth=32, rate=44100, channels=2 ! alsasink");
+			inPipe.setName("inPipe");
+			// inPipe.addMany(udpsrc, audiosink);
+			// Element.linkMany(udpsrc, audiosink);
 
 			outPipe.play();
 			inPipe.play();
